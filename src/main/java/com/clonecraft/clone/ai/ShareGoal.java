@@ -170,7 +170,12 @@ public class ShareGoal extends Goal {
 			}
 			if (removed > 0) {
 				// pickupItem puts armour straight on if it's better than what they wear.
-				this.partner.pickupItem(template.copyWithCount(removed));
+				ItemStack given = template.copyWithCount(removed);
+				this.partner.pickupItem(given);
+				// The partner's inventory may have filled up since this goal started; drop what didn't fit instead of losing it.
+				if (!given.isEmpty() && this.partner.level() instanceof net.minecraft.server.level.ServerLevel level) {
+					this.partner.spawnAtLocation(level, given);
+				}
 				this.clone.getInventory().syncHeld();
 				this.clone.playSound(SoundEvents.ITEM_PICKUP, 1.0F, 1.0F + (this.clone.getRandom().nextFloat() - 0.5F) / 10.0F);
 			}

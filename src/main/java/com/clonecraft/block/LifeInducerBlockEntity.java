@@ -155,9 +155,11 @@ public class LifeInducerBlockEntity extends BaseContainerBlockEntity {
 	/** Breaking a charged Life Inducer releases the energy all at once. */
 	@Override
 	public void preRemoveSideEffects(final BlockPos pos, final BlockState state) {
-		super.preRemoveSideEffects(pos, state);
-		if (this.power > 0 && this.level instanceof ServerLevel level) {
-			double energy = this.power / 14.0;
+		// Clear the power first, so the explosion can't set this off a second time.
+		int power = this.power;
+		this.power = 0;
+		if (power > 0 && this.level instanceof ServerLevel level) {
+			double energy = power / 14.0;
 			Vec3 middle = Vec3.atCenterOf(pos);
 			for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos).inflate(16.0, 12.0, 16.0))) {
 				double dist = Math.max(1.0, e.position().distanceTo(middle));
@@ -166,9 +168,10 @@ public class LifeInducerBlockEntity extends BaseContainerBlockEntity {
 				e.needsSync = true;
 				e.hurtServer(level, level.damageSources().generic(), (float)(energy / dist));
 			}
-			level.explode(null, middle.x, middle.y, middle.z, (float)(this.power * 6.0 / MAX_POWER), Level.ExplosionInteraction.BLOCK);
-			this.power = 0;
+			level.explode(null, middle.x, middle.y, middle.z, (float)(power * 6.0 / MAX_POWER), Level.ExplosionInteraction.BLOCK);
 		}
+		// Drop the eggs after the blast, so it doesn't destroy them.
+		super.preRemoveSideEffects(pos, state);
 	}
 
 	@Override

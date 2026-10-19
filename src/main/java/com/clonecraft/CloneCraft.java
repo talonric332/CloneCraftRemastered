@@ -29,6 +29,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
@@ -197,6 +198,11 @@ public class CloneCraft implements ModInitializer {
 
 		FabricDefaultAttributeRegistry.register(CLONE, CloneEntity.createAttributes());
 		ServerNetworking.register();
+		// Schematics and selections belong to one world; forget them when it closes.
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			com.clonecraft.schematic.SchematicStore.clearCache();
+			SchematicSelectorItem.clearSelections();
+		});
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> CloneCommands.register(dispatcher));
 
 		// Talk to clones with "\" in chat.
@@ -204,7 +210,8 @@ public class CloneCraft implements ModInitializer {
 
 		// Hostile mobs attack clones that are willing to fight, just like they attack players.
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
-			if (entity instanceof Monster monster) {
+			// Neutral mobs (endermen, zombified piglins...) leave clones alone until provoked, like they do players.
+			if (entity instanceof Monster monster && !(entity instanceof net.minecraft.world.entity.NeutralMob)) {
 				var targets = ((MobAccessor)monster).clonecraft$getTargetSelector();
 				boolean already = targets.getAvailableGoals().stream().anyMatch(g -> g.getGoal() instanceof CloneTargetGoal);
 				if (!already) {
@@ -218,8 +225,20 @@ public class CloneCraft implements ModInitializer {
 
 	/** Makes a monster go after nearby clones that have "Fight" turned on. */
 	public static class CloneTargetGoal extends NearestAttackableTargetGoal<CloneEntity> {
+		private final Monster monster;
+
 		public CloneTargetGoal(final Monster monster) {
 			super(monster, CloneEntity.class, true, (target, level) -> target instanceof CloneEntity c && c.hasOption(CloneOption.FIGHT));
+			this.monster = monster;
+		}
+
+		@Override
+		public boolean canUse() {
+			// Spiders are peaceful in bright light, the same check vanilla uses before they go after players.
+			if (this.monster instanceof net.minecraft.world.entity.monster.spider.Spider && this.monster.getLightLevelDependentMagicValue() >= 0.5F) {
+				return false;
+			}
+			return super.canUse();
 		}
 	}
 

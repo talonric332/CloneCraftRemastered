@@ -78,6 +78,16 @@ public class SchematicSelectorItem extends Item {
 		return InteractionResult.SUCCESS;
 	}
 
+	/** The two corners this player picked, or null if they haven't picked both. */
+	public static BlockPos @org.jspecify.annotations.Nullable [] getSelection(final UUID player) {
+		BlockPos[] sel = SELECTIONS.get(player);
+		return sel == null || sel[0] == null || sel[1] == null ? null : sel.clone();
+	}
+
+	public static void clearSelections() {
+		SELECTIONS.clear();
+	}
+
 	private static void sync(final ServerPlayer player, final BlockPos[] sel) {
 		ServerPlayNetworking.send(player, new Payloads.Selection(Optional.ofNullable(sel[0]), Optional.ofNullable(sel[1])));
 	}

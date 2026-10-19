@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 1,
+	"id": "clonecraft-gametest",
+	"version": "1.0.0",
+	"name": "CloneCraft Remastered Game Tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"com.clonecraft.test.CloneCraftGameTests"
+		],
+		"fabric-client-gametest": [
+			"com.clonecraft.test.WatchFixesClientTest"
+		]
+	},
+	"depends": {
+		"clonecraft": "*",
+		"fabric-gametest-api-v1": "*"
+	}
+}

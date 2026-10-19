@@ -65,6 +65,10 @@ public class CloneInventory implements Container {
 		ItemStack moving = this.main.get(index);
 		this.main.set(index, this.main.get(target));
 		this.main.set(target, moving);
+		if (target == this.selected) {
+			// The held item just moved out of this slot. Update the hand too, or syncHeld would copy the old item back.
+			this.clone.setItemSlot(EquipmentSlot.MAINHAND, moving);
+		}
 		this.select(target);
 	}
 

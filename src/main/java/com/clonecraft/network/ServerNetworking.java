@@ -3,12 +3,14 @@ package com.clonecraft.network;
 import com.clonecraft.CloneCraft;
 import com.clonecraft.clone.CloneTeam;
 import com.clonecraft.entity.CloneEntity;
+import com.clonecraft.item.SchematicSelectorItem;
 import com.clonecraft.schematic.Schematic;
 import com.clonecraft.schematic.SchematicStore;
 import java.util.ArrayList;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -137,22 +139,42 @@ public final class ServerNetworking {
 			player.sendSystemMessage(Component.literal("Give the schematic a name first.").withStyle(ChatFormatting.RED));
 			return;
 		}
-		long sx = Math.abs(payload.a().getX() - payload.b().getX()) + 1L;
-		long sy = Math.abs(payload.a().getY() - payload.b().getY()) + 1L;
-		long sz = Math.abs(payload.a().getZ() - payload.b().getZ()) + 1L;
+		// Use the corners the player actually picked with the Schematic Selector, never the ones the client sends,
+		// so a modified client can't make the server load or generate huge areas.
+		BlockPos[] sel = SchematicSelectorItem.getSelection(player.getUUID());
+		if (sel == null || !sel[0].equals(payload.a()) || !sel[1].equals(payload.b())) {
+			player.sendSystemMessage(Component.literal("Select both corners with the Schematic Selector first.").withStyle(ChatFormatting.RED));
+			return;
+		}
+		BlockPos a = sel[0];
+		BlockPos b = sel[1];
+		long sx = Math.abs(a.getX() - b.getX()) + 1L;
+		long sy = Math.abs(a.getY() - b.getY()) + 1L;
+		long sz = Math.abs(a.getZ() - b.getZ()) + 1L;
 		if (sx * sy * sz > 1_000_000L) {
 			player.sendSystemMessage(Component.literal("That selection is too big (max 1,000,000 blocks).").withStyle(ChatFormatting.RED));
 			return;
 		}
-		if (payload.a().distSqr(player.blockPosition()) > 256 * 256) {
+		if (a.distSqr(player.blockPosition()) > 256 * 256 || b.distSqr(player.blockPosition()) > 256 * 256) {
+			player.sendSystemMessage(Component.literal("You're too far from the selection to save it.").withStyle(ChatFormatting.RED));
 			return;
+		}
+		BlockPos min = new BlockPos(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+		BlockPos max = new BlockPos(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()));
+		for (int cx = min.getX() >> 4; cx <= max.getX() >> 4; cx++) {
+			for (int cz = min.getZ() >> 4; cz <= max.getZ() >> 4; cz++) {
+				if (!player.level().isLoaded(new BlockPos(cx << 4, min.getY(), cz << 4))) {
+					player.sendSystemMessage(Component.literal("Part of the selection isn't loaded. Move closer and try again.").withStyle(ChatFormatting.RED));
+					return;
+				}
+			}
 		}
 		var server = player.level().getServer();
 		if (SchematicStore.exists(server, name) && !payload.overwrite()) {
 			player.sendSystemMessage(Component.literal("A schematic called '" + name + "' already exists.").withStyle(ChatFormatting.RED));
 			return;
 		}
-		Schematic schematic = Schematic.capture(player.level(), name, payload.a(), payload.b());
+		Schematic schematic = Schematic.capture(player.level(), name, a, b);
 		if (SchematicStore.save(server, schematic)) {
 			player.sendSystemMessage(Component.literal("Schematic '" + name + "' saved!").withStyle(ChatFormatting.GREEN));
 		} else {
