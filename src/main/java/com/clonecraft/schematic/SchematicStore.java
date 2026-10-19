@@ -35,6 +35,11 @@ public final class SchematicStore {
 		return clean.length() > 40 ? clean.substring(0, 40) : clean;
 	}
 
+	/** Forgets cached schematics, so a different world doesn't see this one's. Called when the server stops. */
+	public static void clearCache() {
+		CACHE.clear();
+	}
+
 	public static boolean exists(final MinecraftServer server, final String name) {
 		return Files.exists(folder(server).resolve(cleanName(name) + ".nbt"));
 	}

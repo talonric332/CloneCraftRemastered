@@ -35,7 +35,7 @@ public class FetchItemGoal extends Goal {
 		BlockPos best = null;
 		double bestDist = Double.MAX_VALUE;
 		for (BlockPos pos : this.clone.knownContainers) {
-			if (this.clone.level().getBlockEntity(pos) instanceof Container c && this.slotWith(c, wanted) >= 0) {
+			if (this.clone.level().isLoaded(pos) && this.clone.level().getBlockEntity(pos) instanceof Container c && this.slotWith(c, wanted) >= 0) {
 				double d = this.clone.distanceToSqr(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
 				if (d < bestDist) {
 					bestDist = d;

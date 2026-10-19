@@ -22,6 +22,18 @@ loom {
 	}
 }
 
+// Automated in-game tests (src/gametest). Run them with: gradlew runGameTest
+// To watch them in a game window instead: gradlew runClientGameTest
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "clonecraft-gametest"
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"

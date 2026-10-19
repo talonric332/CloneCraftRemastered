@@ -667,8 +667,8 @@ public class CloneEntity extends PathfinderMob {
 	private void drinkMilk() {
 		int slot = this.inventory.find(s -> s.is(Items.MILK_BUCKET));
 		if (slot >= 0) {
-			this.inventory.main.set(slot, new ItemStack(Items.BUCKET));
-			this.inventory.select(this.inventory.selected);
+			// setItem also updates the hand when the milk is being held.
+			this.inventory.setItem(slot, new ItemStack(Items.BUCKET));
 			this.aimScale = DEFAULT_SCALE;
 			this.shrinkCooldown = 0;
 			this.playSound(SoundEvents.GENERIC_DRINK.value(), 1.0F, 1.0F);
@@ -1020,7 +1020,8 @@ public class CloneEntity extends PathfinderMob {
 	// ================================================================ smart memory
 
 	private void scanForContainers(final ServerLevel level) {
-		this.knownContainers.removeIf(pos -> !(level.getBlockEntity(pos) instanceof net.minecraft.world.Container));
+		// Only check containers in loaded chunks. Looking up a far-away one would force its chunk to load.
+		this.knownContainers.removeIf(pos -> level.isLoaded(pos) && !(level.getBlockEntity(pos) instanceof net.minecraft.world.Container));
 		BlockPos center = this.blockPosition();
 		for (BlockPos pos : BlockPos.betweenClosed(center.offset(-8, -4, -8), center.offset(8, 4, 8))) {
 			if (this.knownContainers.size() >= 64) {

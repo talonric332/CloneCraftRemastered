@@ -86,7 +86,8 @@ public class SterilizerBlock extends BaseEntityBlock {
 				}
 				level.setBlock(pos, state.setValue(WATER, 0), Block.UPDATE_ALL);
 				level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0F, 1.0F);
-				if (water == 1) {
+				// 3 is clean water with items boiling in it, so it's still clean water.
+				if (water == 1 || water == 3) {
 					player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, new ItemStack(Items.WATER_BUCKET)));
 				}
 			}
