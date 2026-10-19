@@ -107,6 +107,26 @@ public final class Payloads {
 		}
 	}
 
+	/**
+	 * The Clone Remote's bulk editor: applies the same changes to many clones at once. Options in setMask are turned on and
+	 * options in clearMask turned off (others are left alone). team is a CloneTeam ordinal, or -1 to leave it. If listSource
+	 * is present, that clone's "Entities To Attack" and "Blocks To Break" lists are copied to every chosen clone.
+	 */
+	public record BulkEdit(List<UUID> clones, int setMask, int clearMask, int team, Optional<UUID> listSource) implements CustomPacketPayload {
+		public static final int MAX_CLONES = 1024;
+
+		public static final Type<BulkEdit> TYPE = new Type<>(CloneCraft.id("bulk_edit"));
+		public static final StreamCodec<ByteBuf, BulkEdit> CODEC = StreamCodec.composite(
+			UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_CLONES)), BulkEdit::clones, ByteBufCodecs.VAR_INT, BulkEdit::setMask,
+			ByteBufCodecs.VAR_INT, BulkEdit::clearMask, ByteBufCodecs.VAR_INT, BulkEdit::team, ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC), BulkEdit::listSource,
+			BulkEdit::new);
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	// ---------------------------------------------------------------- server -> client
 
 	/** One owned clone, as shown on the Clone Remote screen. Mode: 0 none, 1 follow, 2 stay, 3 wander. */

@@ -71,21 +71,24 @@ public class CloneRemoteScreen extends Screen {
 		int by = this.height - 26;
 		int cx = this.width / 2;
 		Button all = this.addRenderableWidget(Button.builder(Component.literal("Teleport All"),
-			b -> this.send(UUID.randomUUID(), Payloads.RemoteAction.TELEPORT_ALL, 0)).bounds(cx - 154, by, 100, 20).build());
+			b -> this.send(UUID.randomUUID(), Payloads.RemoteAction.TELEPORT_ALL, 0)).bounds(cx - 166, by, 80, 20).build());
 		all.active = !this.clones.isEmpty();
+		Button bulk = this.addRenderableWidget(Button.builder(Component.literal("Bulk Edit"),
+			b -> this.minecraft.gui.setScreen(new CloneBulkEditScreen(this, this.clones))).bounds(cx - 82, by, 80, 20).build());
+		bulk.active = !this.clones.isEmpty();
 		this.addRenderableWidget(Button.builder(Component.literal("Refresh"), b -> this.send(UUID.randomUUID(), Payloads.RemoteAction.REFRESH, 0))
-			.bounds(cx - 50, by, 100, 20).build());
-		this.addRenderableWidget(Button.builder(Component.literal("Done"), b -> this.onClose()).bounds(cx + 54, by, 100, 20).build());
+			.bounds(cx + 2, by, 80, 20).build());
+		this.addRenderableWidget(Button.builder(Component.literal("Done"), b -> this.onClose()).bounds(cx + 86, by, 80, 20).build());
 		if (pages > 1) {
 			Button prev = this.addRenderableWidget(Button.builder(Component.literal("<"), b -> {
 				this.page--;
 				this.rebuildWidgets();
-			}).bounds(cx - 178, by, 20, 20).build());
+			}).bounds(cx - 190, by, 20, 20).build());
 			prev.active = this.page > 0;
 			Button nextPage = this.addRenderableWidget(Button.builder(Component.literal(">"), b -> {
 				this.page++;
 				this.rebuildWidgets();
-			}).bounds(cx + 158, by, 20, 20).build());
+			}).bounds(cx + 170, by, 20, 20).build());
 			nextPage.active = this.page < pages - 1;
 		}
 	}

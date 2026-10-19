@@ -31,7 +31,10 @@ public final class ServerNetworking {
 		PayloadTypeRegistry.serverboundPlay().register(Payloads.RemoteAction.TYPE, Payloads.RemoteAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Payloads.RemoteList.TYPE, Payloads.RemoteList.CODEC);
 
+		PayloadTypeRegistry.serverboundPlay().register(Payloads.BulkEdit.TYPE, Payloads.BulkEdit.CODEC);
+
 		ServerPlayNetworking.registerGlobalReceiver(Payloads.RemoteAction.TYPE, (payload, context) -> RemoteControl.handle(payload, context.player()));
+		ServerPlayNetworking.registerGlobalReceiver(Payloads.BulkEdit.TYPE, (payload, context) -> RemoteControl.bulkEdit(payload, context.player()));
 
 		ServerPlayNetworking.registerGlobalReceiver(Payloads.CloneAction.TYPE, (payload, context) -> handleAction(payload, context.player()));
 		ServerPlayNetworking.registerGlobalReceiver(Payloads.SetName.TYPE, (payload, context) -> {

@@ -47,7 +47,7 @@
 	"tooltip.clonecraft.schematic_selector.2": "Right-click the air: save the area as a schematic",
 	"tooltip.clonecraft.schematic_selector.3": "Sneak + right-click the air: clear the selection",
 	"tooltip.clonecraft.clone_remote.1": "Right-click to see and manage every clone you own",
-	"tooltip.clonecraft.clone_remote.2": "Teleport one or all of your clones to you",
+	"tooltip.clonecraft.clone_remote.2": "Teleport one or all of your clones to you, or bulk edit their settings",
 
 	"message.clonecraft.needle_dirty": "This needle is dirty. Clean it in a Sterilizer first.",
 	"message.clonecraft.cant_spawn": "%s could not be spawned"
