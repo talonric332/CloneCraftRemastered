@@ -2,14 +2,18 @@ package com.clonecraft.network;
 
 import com.clonecraft.CloneCraft;
 import com.clonecraft.clone.CloneOption;
+import com.clonecraft.clone.CloneTeam;
 import com.clonecraft.entity.CloneEntity;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -103,9 +107,55 @@ public final class RemoteControl {
 		sendList(player, false);
 	}
 
+	/** Options the bulk editor never touches: they're part of who the clone is (Female also picks its name), not how it behaves. */
+	public static final int BULK_LOCKED = CloneOption.FEMALE.bit();
+
+	/** Applies the same option, team and list changes to many owned clones. Names are never changed here. */
+	public static void bulkEdit(final Payloads.BulkEdit payload, final ServerPlayer player) {
+		if (!hasRemote(player)) {
+			return;
+		}
+		int clear = payload.clearMask() & ~BULK_LOCKED;
+		int set = payload.setMask() & ~BULK_LOCKED & ~clear;
+		CloneTeam team = payload.team() >= 0 && payload.team() < CloneTeam.values().length ? CloneTeam.values()[payload.team()] : null;
+		CloneEntity source = payload.listSource().map(id -> find(player, id)).orElse(null);
+		if (payload.listSource().isPresent() && source == null) {
+			player.sendSystemMessage(Component.literal("Couldn't find the clone to copy lists from.").withStyle(ChatFormatting.RED));
+		}
+		List<Identifier> attack = source == null ? null : List.copyOf(source.attackTypes);
+		List<Identifier> blocks = source == null ? null : List.copyOf(source.breakBlocks);
+
+		int changed = 0;
+		for (UUID id : new LinkedHashSet<>(payload.clones())) {
+			CloneEntity clone = find(player, id);
+			if (clone == null) {
+				continue;
+			}
+			if (set != 0 || clear != 0) {
+				clone.setOptions((clone.getOptions() & ~clear) | set);
+			}
+			if (team != null) {
+				clone.setCloneTeam(team);
+			}
+			if (source != null && clone != source) {
+				clone.attackTypes.clear();
+				clone.attackTypes.addAll(attack);
+				clone.breakBlocks.clear();
+				clone.breakBlocks.addAll(blocks);
+			}
+			changed++;
+		}
+		player.sendSystemMessage(Component.literal("Updated " + changed + " clone" + (changed == 1 ? "" : "s") + ".").withStyle(ChatFormatting.LIGHT_PURPLE));
+		sendList(player, false);
+	}
+
 	private static @Nullable CloneEntity find(final ServerPlayer player, final Payloads.RemoteAction payload) {
+		return find(player, payload.cloneId());
+	}
+
+	private static @Nullable CloneEntity find(final ServerPlayer player, final UUID id) {
 		for (ServerLevel level : player.level().getServer().getAllLevels()) {
-			if (level.getEntity(payload.cloneId()) instanceof CloneEntity clone && clone.isAlive() && clone.isOwnedBy(player)) {
+			if (level.getEntity(id) instanceof CloneEntity clone && clone.isAlive() && clone.isOwnedBy(player)) {
 				return clone;
 			}
 		}
