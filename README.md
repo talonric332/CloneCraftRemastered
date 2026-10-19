@@ -45,6 +45,14 @@ Craft it with redstone, an ender pearl and iron (` R / IEI / III `). Right-click
 dimension), with buttons to **Manage** a clone from any distance, change its **Mode** (Follow/Stay/Wander), **Teleport** it to you,
 or **Teleport All**. Claiming a clone hides its Claim button.
 
+**Bulk Edit** changes many clones at once:
+- Tick the clones to change in the list on the left (all are ticked to start; **All** / **None** to select quickly).
+- Click an option to cycle it between **Keep**, **ON** and **OFF**. Options left on Keep aren't touched on any clone.
+- **Team** sets every ticked clone's team, and **Lists** copies one clone's Entities To Attack and Blocks To Break lists to the rest.
+- Press **Apply**. Hover a button to read what it does; **Reset** puts everything back to Keep.
+
+Bulk Edit never changes a clone's name or its Female option, so each clone keeps its own name and skin.
+
 ## Mining & farming
 Turn on **Break Blocks** and tick blocks in **Blocks To Break** (or use the Ores/Trees buttons). The clone finds the nearest one
 it can see within 16 blocks, walks over, picks the right tool and digs it out at player speed.
