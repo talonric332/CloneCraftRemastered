@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.UUID;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -124,6 +126,8 @@ public final class RemoteControl {
 		}
 		List<Identifier> attack = source == null ? null : List.copyOf(source.attackTypes);
 		List<Identifier> blocks = source == null ? null : List.copyOf(source.breakBlocks);
+		Payloads.ListEdit attackEdit = valid(payload.attackEdit(), BuiltInRegistries.ENTITY_TYPE);
+		Payloads.ListEdit breakEdit = valid(payload.breakEdit(), BuiltInRegistries.BLOCK);
 
 		int changed = 0;
 		for (UUID id : new LinkedHashSet<>(payload.clones())) {
@@ -143,10 +147,27 @@ public final class RemoteControl {
 				clone.breakBlocks.clear();
 				clone.breakBlocks.addAll(blocks);
 			}
+			applyListEdit(clone.attackTypes, attackEdit);
+			applyListEdit(clone.breakBlocks, breakEdit);
 			changed++;
 		}
 		player.sendSystemMessage(Component.literal("Updated " + changed + " clone" + (changed == 1 ? "" : "s") + ".").withStyle(ChatFormatting.LIGHT_PURPLE));
 		sendList(player, false);
+	}
+
+	/** Drops any names that aren't real mobs (or blocks), so a bad client can't fill clones' lists with junk. */
+	private static Payloads.ListEdit valid(final Payloads.ListEdit edit, final Registry<?> registry) {
+		return new Payloads.ListEdit(edit.add().stream().filter(registry::containsKey).distinct().toList(),
+			edit.remove().stream().filter(registry::containsKey).distinct().toList(), edit.replace());
+	}
+
+	public static void applyListEdit(final Set<Identifier> list, final Payloads.ListEdit edit) {
+		if (edit.replace()) {
+			list.clear();
+		} else {
+			edit.remove().forEach(list::remove);
+		}
+		list.addAll(edit.add());
 	}
 
 	private static @Nullable CloneEntity find(final ServerPlayer player, final Payloads.RemoteAction payload) {

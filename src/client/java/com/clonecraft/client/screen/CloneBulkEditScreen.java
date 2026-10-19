@@ -21,7 +21,8 @@ import net.minecraft.network.chat.Component;
 
 /**
  * The Clone Remote's bulk editor. Tick the clones on the left, then choose what to change on the right: each option can be
- * left alone, turned on or turned off, the team can be set, and one clone's attack/break lists can be copied to the rest.
+ * left alone, turned on or turned off, the team can be set, one clone's attack/break lists can be copied to the rest, and
+ * mobs/blocks can be added to or removed from every clone's attack/break lists.
  * Anything left on "Keep" isn't touched. Names (and Female, which picks the name) can't be bulk edited.
  */
 public class CloneBulkEditScreen extends Screen {
@@ -39,8 +40,12 @@ public class CloneBulkEditScreen extends Screen {
 	private final List<Button> optionButtons = new ArrayList<>();
 	private int team = -1;
 	private int listSource = -1;
+	private final BulkListScreen.Changes attackChanges = new BulkListScreen.Changes();
+	private final BulkListScreen.Changes breakChanges = new BulkListScreen.Changes();
 	private Button teamButton;
 	private Button listButton;
+	private Button attackButton;
+	private Button breakButton;
 	private Button applyButton;
 	private double scroll;
 	private int listX;
@@ -79,11 +84,11 @@ public class CloneBulkEditScreen extends Screen {
 			this.refreshApply();
 		}).bounds(this.listX + this.listW / 2 + 2, listBy, this.listW - this.listW / 2 - 2, 20).build());
 
-		// The right side: one button per option, then Team and Lists, laid out in as many columns as needed to fit.
+		// The right side: one button per option, then Team, Lists, Attack and Break, laid out in as many columns as needed to fit.
 		int x0 = this.listX + this.listW + 10;
 		int areaW = this.width - 10 - x0;
 		int gap = 4;
-		int count = this.options.size() + 2;
+		int count = this.options.size() + 4;
 		int avail = this.listBottom - TOP;
 		int columns = 1;
 		while (columns < 4 && avail / (int)Math.ceil(count / (double)columns) < 18) {
@@ -112,7 +117,7 @@ public class CloneBulkEditScreen extends Screen {
 					b.setMessage(this.teamLabel());
 					this.refreshApply();
 				}).bounds(x, y, buttonW, buttonH).build());
-			} else {
+			} else if (i == this.options.size() + 1) {
 				int labelW = buttonW - 12;
 				this.listButton = this.addRenderableWidget(Button.builder(this.listLabel(labelW), b -> {
 					this.listSource = this.listSource + 1 >= this.clones.size() ? -1 : this.listSource + 1;
@@ -120,6 +125,16 @@ public class CloneBulkEditScreen extends Screen {
 					this.refreshApply();
 				}).bounds(x, y, buttonW, buttonH).build());
 				this.listButton.active = !this.clones.isEmpty();
+			} else if (i == this.options.size() + 2) {
+				this.attackButton = this.addRenderableWidget(Button.builder(
+					Component.literal("Attack: ").append(this.attackChanges.summary()),
+					b -> this.minecraft.gui.setScreen(new BulkListScreen(this, ChooseListScreen.Kind.ENTITIES, this.attackChanges)))
+					.bounds(x, y, buttonW, buttonH).build());
+			} else {
+				this.breakButton = this.addRenderableWidget(Button.builder(
+					Component.literal("Break: ").append(this.breakChanges.summary()),
+					b -> this.minecraft.gui.setScreen(new BulkListScreen(this, ChooseListScreen.Kind.BLOCKS, this.breakChanges)))
+					.bounds(x, y, buttonW, buttonH).build());
 			}
 		}
 
@@ -129,6 +144,8 @@ public class CloneBulkEditScreen extends Screen {
 			Arrays.fill(this.optionState, KEEP);
 			this.team = -1;
 			this.listSource = -1;
+			this.attackChanges.reset();
+			this.breakChanges.reset();
 			this.rebuildWidgets();
 		}).bounds(bx, by, 76, 20).build());
 		this.applyButton = this.addRenderableWidget(Button.builder(Component.literal("Apply"), b -> this.apply()).bounds(bx + 80, by, 80, 20).build());
@@ -163,7 +180,7 @@ public class CloneBulkEditScreen extends Screen {
 	}
 
 	private boolean hasChanges() {
-		if (this.team >= 0 || this.listSource >= 0) {
+		if (this.team >= 0 || this.listSource >= 0 || !this.attackChanges.isEmpty() || !this.breakChanges.isEmpty()) {
 			return true;
 		}
 		for (int state : this.optionState) {
@@ -195,7 +212,7 @@ public class CloneBulkEditScreen extends Screen {
 		if (targets.size() > Payloads.BulkEdit.MAX_CLONES) {
 			targets = targets.subList(0, Payloads.BulkEdit.MAX_CLONES);
 		}
-		ClientNetworking.send(new Payloads.BulkEdit(targets, set, clear, this.team, source));
+		ClientNetworking.send(new Payloads.BulkEdit(targets, set, clear, this.team, source, this.attackChanges.toPayload(), this.breakChanges.toPayload()));
 		this.onClose();
 	}
 
@@ -253,6 +270,12 @@ public class CloneBulkEditScreen extends Screen {
 		}
 		if (this.listButton != null && this.listButton.isHovered()) {
 			hint = "Copy one clone's 'Entities To Attack' and 'Blocks To Break' lists to every selected clone.";
+		}
+		if (this.attackButton != null && this.attackButton.isHovered()) {
+			hint = "Pick mobs to add to or remove from every selected clone's 'Entities To Attack' list.";
+		}
+		if (this.breakButton != null && this.breakButton.isHovered()) {
+			hint = "Pick blocks to add to or remove from every selected clone's 'Blocks To Break' list.";
 		}
 		g.centeredText(this.font, this.font.plainSubstrByWidth(hint, this.width - 20), this.width / 2, 17, 0xFFAAAAAA);
 
