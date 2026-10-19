@@ -1,0 +1,1 @@
+{ "type": "minecraft:crafting_shaped", "category": "misc", "key": { "R": "minecraft:redstone", "E": "minecraft:ender_pearl", "I": "minecraft:iron_ingot" }, "pattern": [ " R ", "IEI", "III" ], "result": { "count": 1, "id": "clonecraft:clone_remote" } }

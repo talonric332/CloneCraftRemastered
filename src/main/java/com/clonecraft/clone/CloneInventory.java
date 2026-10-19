@@ -231,7 +231,7 @@ public class CloneInventory implements Container {
 
 	@Override
 	public boolean stillValid(final Player player) {
-		return this.clone.isAlive() && player.distanceToSqr(this.clone) < 64.0;
+		return this.clone.isAlive() && (player.distanceToSqr(this.clone) < 64.0 || this.clone.hasRemoteAccess(player));
 	}
 
 	@Override

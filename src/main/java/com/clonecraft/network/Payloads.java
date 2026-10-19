@@ -4,7 +4,9 @@ import com.clonecraft.CloneCraft;
 import io.netty.buffer.ByteBuf;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -87,7 +89,51 @@ public final class Payloads {
 		}
 	}
 
+	/** A button on the Clone Remote screen. The clone is picked by UUID, since it may be far away or in another dimension. */
+	public record RemoteAction(UUID cloneId, int action, int value) implements CustomPacketPayload {
+		public static final int REFRESH = 0;
+		public static final int TELEPORT = 1;
+		public static final int TELEPORT_ALL = 2;
+		public static final int SET_MODE = 3;
+		public static final int MANAGE = 4;
+
+		public static final Type<RemoteAction> TYPE = new Type<>(CloneCraft.id("remote_action"));
+		public static final StreamCodec<ByteBuf, RemoteAction> CODEC = StreamCodec.composite(
+			UUIDUtil.STREAM_CODEC, RemoteAction::cloneId, ByteBufCodecs.VAR_INT, RemoteAction::action, ByteBufCodecs.VAR_INT, RemoteAction::value, RemoteAction::new);
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	// ---------------------------------------------------------------- server -> client
+
+	/** One owned clone, as shown on the Clone Remote screen. Mode: 0 none, 1 follow, 2 stay, 3 wander. */
+	public record RemoteClone(UUID uuid, int entityId, String name, float health, float maxHealth, String dimension, BlockPos pos,
+		boolean sameLevel, int mode) {
+		public static final int MODE_NONE = 0;
+		public static final int MODE_FOLLOW = 1;
+		public static final int MODE_STAY = 2;
+		public static final int MODE_WANDER = 3;
+
+		public static final StreamCodec<ByteBuf, RemoteClone> CODEC = StreamCodec.composite(
+			UUIDUtil.STREAM_CODEC, RemoteClone::uuid, ByteBufCodecs.VAR_INT, RemoteClone::entityId, ByteBufCodecs.stringUtf8(64), RemoteClone::name,
+			ByteBufCodecs.FLOAT, RemoteClone::health, ByteBufCodecs.FLOAT, RemoteClone::maxHealth, ByteBufCodecs.stringUtf8(256), RemoteClone::dimension,
+			BlockPos.STREAM_CODEC, RemoteClone::pos, ByteBufCodecs.BOOL, RemoteClone::sameLevel, ByteBufCodecs.VAR_INT, RemoteClone::mode, RemoteClone::new);
+	}
+
+	/** The player's clones for the Clone Remote screen. "open" opens the screen; otherwise it just refreshes an open one. */
+	public record RemoteList(List<RemoteClone> clones, boolean open) implements CustomPacketPayload {
+		public static final Type<RemoteList> TYPE = new Type<>(CloneCraft.id("remote_list"));
+		public static final StreamCodec<ByteBuf, RemoteList> CODEC = StreamCodec.composite(
+			RemoteClone.CODEC.apply(ByteBufCodecs.list()), RemoteList::clones, ByteBufCodecs.BOOL, RemoteList::open, RemoteList::new);
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 
 	public record CloneLists(int entityId, List<Identifier> attack, List<Identifier> breakBlocks) implements CustomPacketPayload {
 		public static final Type<CloneLists> TYPE = new Type<>(CloneCraft.id("clone_lists"));

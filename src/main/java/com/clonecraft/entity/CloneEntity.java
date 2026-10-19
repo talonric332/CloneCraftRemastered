@@ -352,6 +352,12 @@ public class CloneEntity extends PathfinderMob {
 		return this.ownerId != null && this.ownerId.equals(entity.getUUID());
 	}
 
+	/** The owner can manage the clone from any distance (in the same dimension) while carrying a Clone Remote. Server side only. */
+	public boolean hasRemoteAccess(final Player player) {
+		return !this.level().isClientSide() && this.isOwnedBy(player) && player.level() == this.level()
+			&& com.clonecraft.network.RemoteControl.hasRemote(player);
+	}
+
 	/** Only the owner (or anyone in creative mode) may control a clone. */
 	public boolean canUse(final Player player) {
 		if (player.getAbilities().instabuild) {

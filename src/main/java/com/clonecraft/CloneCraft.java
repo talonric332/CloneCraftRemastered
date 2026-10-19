@@ -12,6 +12,7 @@ import com.clonecraft.dna.Dna;
 import com.clonecraft.dna.DnaItems;
 import com.clonecraft.entity.CloneEntity;
 import com.clonecraft.entity.CloneSpawnEggEntity;
+import com.clonecraft.item.CloneRemoteItem;
 import com.clonecraft.item.CloneSpawnEggItem;
 import com.clonecraft.item.NeedleItem;
 import com.clonecraft.item.SchematicSelectorItem;
@@ -123,6 +124,7 @@ public class CloneCraft implements ModInitializer {
 	public static final Item SPAWN_EGG = item("unactivated_spawn_egg", p -> new CloneSpawnEggItem(false, p), new Item.Properties());
 	public static final Item ACTIVE_SPAWN_EGG = item("spawn_egg", p -> new CloneSpawnEggItem(true, p), new Item.Properties());
 	public static final Item SCHEMATIC_SELECTOR = item("schematic_selector", SchematicSelectorItem::new, new Item.Properties().stacksTo(1));
+	public static final Item CLONE_REMOTE = item("clone_remote", CloneRemoteItem::new, new Item.Properties().stacksTo(1));
 
 	public static final Item STERILIZER_ITEM = blockItem(STERILIZER);
 	public static final Item CENTRIFUGE_ITEM = blockItem(CENTRIFUGE);
@@ -155,6 +157,7 @@ public class CloneCraft implements ModInitializer {
 				output.accept(LIFE_INDUCER_ITEM);
 				output.accept(ANTENNA_ITEM);
 				output.accept(SCHEMATIC_SELECTOR);
+				output.accept(CLONE_REMOTE);
 				output.accept(DnaItems.dirty(STEM_CELL_NEEDLE));
 				Dna human = Dna.human();
 				output.accept(DnaItems.filled(BLOOD_NEEDLE, human));

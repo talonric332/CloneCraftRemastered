@@ -26,5 +26,13 @@ public final class ClientNetworking {
 			(payload, context) -> Minecraft.getInstance().gui.setScreen(new SaveSchematicScreen(payload.a(), payload.b())));
 		ClientPlayNetworking.registerGlobalReceiver(Payloads.Selection.TYPE,
 			(payload, context) -> Outlines.setSelection(payload.a().orElse(null), payload.b().orElse(null)));
+		ClientPlayNetworking.registerGlobalReceiver(Payloads.RemoteList.TYPE, (payload, context) -> {
+			Minecraft mc = Minecraft.getInstance();
+			if (mc.gui.screen() instanceof com.clonecraft.client.screen.CloneRemoteScreen screen) {
+				screen.update(payload.clones());
+			} else if (payload.open()) {
+				mc.gui.setScreen(new com.clonecraft.client.screen.CloneRemoteScreen(payload.clones()));
+			}
+		});
 	}
 }

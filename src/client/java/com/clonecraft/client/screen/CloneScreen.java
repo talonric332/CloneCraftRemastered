@@ -52,8 +52,15 @@ public class CloneScreen extends AbstractContainerScreen<CloneMenu> {
 
 		int rx = Math.min(this.width - 104, this.leftPos + this.imageWidth + 10);
 		boolean creative = this.minecraft.player.getAbilities().instabuild;
-		if (creative || this.getClone().getOwnerName().isEmpty()) {
-			this.addRenderableWidget(Button.builder(Component.literal("Claim Clone"), b -> this.action(Payloads.CloneAction.CLAIM, 0)).bounds(rx, by + 120, 100, 20).build());
+		// Only offer Claim when you don't already own this clone, and hide the button once you claim it.
+		String owner = this.getClone().getOwnerName();
+		boolean mine = owner.equals(this.minecraft.player.getGameProfile().name());
+		if (!mine && (creative || owner.isEmpty())) {
+			this.addRenderableWidget(Button.builder(Component.literal("Claim Clone"), b -> {
+				this.action(Payloads.CloneAction.CLAIM, 0);
+				b.visible = false;
+				b.active = false;
+			}).bounds(rx, by + 120, 100, 20).build());
 		}
 		if (creative) {
 			this.copyAmount = new EditBox(this.font, rx, by + 16, 100, 20, Component.literal("Copies"));

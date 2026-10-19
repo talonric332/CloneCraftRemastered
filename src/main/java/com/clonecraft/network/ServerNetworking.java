@@ -28,6 +28,10 @@ public final class ServerNetworking {
 		PayloadTypeRegistry.clientboundPlay().register(Payloads.SchematicList.TYPE, Payloads.SchematicList.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Payloads.OpenSaveSchematic.TYPE, Payloads.OpenSaveSchematic.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Payloads.Selection.TYPE, Payloads.Selection.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(Payloads.RemoteAction.TYPE, Payloads.RemoteAction.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(Payloads.RemoteList.TYPE, Payloads.RemoteList.CODEC);
+
+		ServerPlayNetworking.registerGlobalReceiver(Payloads.RemoteAction.TYPE, (payload, context) -> RemoteControl.handle(payload, context.player()));
 
 		ServerPlayNetworking.registerGlobalReceiver(Payloads.CloneAction.TYPE, (payload, context) -> handleAction(payload, context.player()));
 		ServerPlayNetworking.registerGlobalReceiver(Payloads.SetName.TYPE, (payload, context) -> {
@@ -66,7 +70,8 @@ public final class ServerNetworking {
 	}
 
 	private static @Nullable CloneEntity usable(final ServerPlayer player, final int entityId) {
-		if (player.level().getEntity(entityId) instanceof CloneEntity clone && clone.isAlive() && clone.canUse(player) && clone.distanceToSqr(player) < 64 * 64) {
+		if (player.level().getEntity(entityId) instanceof CloneEntity clone && clone.isAlive() && clone.canUse(player)
+			&& (clone.distanceToSqr(player) < 64 * 64 || clone.hasRemoteAccess(player))) {
 			return clone;
 		}
 		return null;

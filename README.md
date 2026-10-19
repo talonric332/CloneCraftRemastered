@@ -38,6 +38,11 @@ DNA from any creature works, so you can also make zombie, cow, creeper... spawn 
 - **Teams**: Red/Orange/Yellow/Green/Blue/LightBlue/Purple/Pink fight other colours; Good only fights Evil;
   Evil fights everyone (including you); Rampant fights everything.
 
+## Clone Remote
+Craft it with redstone, an ender pearl and iron (` R / IEI / III `). Right-click it to see every clone you own (in loaded areas of any
+dimension), with buttons to **Manage** a clone from any distance, change its **Mode** (Follow/Stay/Wander), **Teleport** it to you,
+or **Teleport All**. Claiming a clone hides its Claim button.
+
 ## Mining & farming
 Turn on **Break Blocks** and tick blocks in **Blocks To Break** (or use the Ores/Trees buttons). The clone finds the nearest one
 it can see within 16 blocks, walks over, picks the right tool and digs it out at player speed.
