@@ -137,6 +137,9 @@ public class CloneEntity extends PathfinderMob {
 		super(type, level);
 		this.setCanPickUpLoot(false);
 		this.getNavigation().setCanOpenDoors(true);
+		// Players walk and swim through water happily, so clones shouldn't go far out of their way to avoid it.
+		this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 2.0F);
+		this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER_BORDER, 0.0F);
 		this.songId = this.random.nextInt(Songs.count());
 		this.setPersistenceRequired();
 		if (!level.isClientSide()) {
@@ -396,7 +399,9 @@ public class CloneEntity extends PathfinderMob {
 			this.updateBow(level);
 			this.updateSprint();
 			this.updateScale();
-			if (this.hasOption(CloneOption.GUARD) && this.guardPos == null) {
+			this.swim();
+			// Only pick a guard spot once standing on solid ground (not mid-fall or swimming).
+			if (this.hasOption(CloneOption.GUARD) && this.guardPos == null && this.onGround() && !this.isInWater()) {
 				this.guardPos = this.blockPosition().below();
 			}
 			if (this.hasOption(CloneOption.SMART_MEMORY) && this.tickCount % 40 == 0) {
@@ -421,6 +426,38 @@ public class CloneEntity extends PathfinderMob {
 	}
 
 	private Vec3 lastPos = Vec3.ZERO;
+
+	/**
+	 * Mobs swim very slowly and struggle to get out of water. In water, push the clone along its path like a
+	 * swimming player (faster when sprinting), help it up onto ledges, and come up for air when running out.
+	 */
+	private void swim() {
+		if (!this.isInWater() || this.isPassenger()) {
+			return;
+		}
+		Vec3 push = Vec3.ZERO;
+		var path = this.getNavigation().getPath();
+		if (path != null && !path.isDone()) {
+			Vec3 to = path.getNextEntityPos(this).subtract(this.position());
+			double flat = Math.sqrt(to.x * to.x + to.z * to.z);
+			if (flat > 0.1) {
+				double speed = this.isSprinting() ? 0.045 : 0.03;
+				push = push.add(to.x / flat * speed, 0.0, to.z / flat * speed);
+			}
+			if (to.y > 0.3 || this.horizontalCollision) {
+				push = push.add(0.0, 0.04, 0.0);
+			}
+			if (to.y < -0.5 && this.getAirSupply() > this.getMaxAirSupply() / 2) {
+				push = push.add(0.0, -0.03, 0.0);
+			}
+		}
+		if (this.isUnderWater() && this.getAirSupply() < this.getMaxAirSupply() / 3) {
+			push = push.add(0.0, 0.05, 0.0);
+		}
+		if (push != Vec3.ZERO) {
+			this.setDeltaMovement(this.getDeltaMovement().add(push));
+		}
+	}
 
 	private void updateSprint() {
 		boolean moving = !this.getNavigation().isDone();
@@ -617,7 +654,7 @@ public class CloneEntity extends PathfinderMob {
 		this.inventory.add(stack);
 	}
 
-	private static double armorValue(final ItemStack stack, final EquipmentSlot slot) {
+	public static double armorValue(final ItemStack stack, final EquipmentSlot slot) {
 		double[] total = {0};
 		stack.forEachModifier(slot, (attribute, modifier) -> {
 			if (attribute.is(Attributes.ARMOR) || attribute.is(Attributes.ARMOR_TOUGHNESS)) {
@@ -809,7 +846,7 @@ public class CloneEntity extends PathfinderMob {
 		}
 	}
 
-	private static double weaponScore(final ItemStack stack) {
+	public static double weaponScore(final ItemStack stack) {
 		double[] dmg = {0};
 		stack.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
 			if (attribute.is(Attributes.ATTACK_DAMAGE) && modifier.operation() == AttributeModifier.Operation.ADD_VALUE) {

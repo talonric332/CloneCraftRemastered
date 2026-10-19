@@ -61,6 +61,8 @@ public final class RemoteControl {
 	}
 
 	public static void handle(final Payloads.RemoteAction payload, final ServerPlayer player) {
+		CloneCraft.LOGGER.info("[CloneCraft] remote action {} value {} on {} from {} (has remote: {}, clone found: {})", payload.action(), payload.value(),
+			payload.cloneId(), player.getGameProfile().name(), hasRemote(player), find(player, payload) != null);
 		if (!hasRemote(player)) {
 			return;
 		}

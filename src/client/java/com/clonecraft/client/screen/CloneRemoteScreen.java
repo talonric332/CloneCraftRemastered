@@ -55,9 +55,13 @@ public class CloneRemoteScreen extends Screen {
 			int y = TOP + i * ROW_H;
 			this.addRenderableWidget(Button.builder(Component.literal("Teleport"), b -> this.send(clone.uuid(), Payloads.RemoteAction.TELEPORT, 0))
 				.bounds(right - 60, y, 60, 20).build());
-			int next = (clone.mode() + 1) % MODES.length;
-			this.addRenderableWidget(Button.builder(Component.literal("Mode: " + MODES[clone.mode() % MODES.length]),
-				b -> this.send(clone.uuid(), Payloads.RemoteAction.SET_MODE, next)).bounds(right - 148, y, 84, 20).build());
+			int[] mode = {Math.floorMod(clone.mode(), MODES.length)};
+			this.addRenderableWidget(Button.builder(Component.literal("Mode: " + MODES[mode[0]]), b -> {
+				// Update the label straight away instead of waiting for the server to send the list back.
+				mode[0] = (mode[0] + 1) % MODES.length;
+				b.setMessage(Component.literal("Mode: " + MODES[mode[0]]));
+				this.send(clone.uuid(), Payloads.RemoteAction.SET_MODE, mode[0]);
+			}).bounds(right - 148, y, 84, 20).build());
 			Button manage = Button.builder(Component.literal("Manage"), b -> this.send(clone.uuid(), Payloads.RemoteAction.MANAGE, 0))
 				.bounds(right - 212, y, 60, 20).build();
 			manage.active = clone.sameLevel() && this.minecraft.level != null && this.minecraft.level.getEntity(clone.entityId()) instanceof CloneEntity;

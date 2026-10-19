@@ -17,7 +17,7 @@ public enum CloneOption {
 	BREAK_BLOCKS("Break Blocks", false, "Enables/disables the ability to break any blocks at all (choose which in 'Blocks To Break')"),
 	SMART_MEMORY("Smart Memory", false, "Clones scan the environment and remember the location of chests and other important blocks."),
 	FARM("Farm", false, "Enables/disables a clone's farming ability: fully grown crops are harvested and replanted"),
-	SHARE("Share Items", false, "Clones on the same team will share food and arrows with each other."),
+	SHARE("Share Items", false, "Clones on the same team share spare armour, weapons and tools, and even out food, arrows and torches."),
 	COMMAND("Commandable", true, "Enables clones to be commanded via in game text. Just talk to them, but begin with a \\ (backslash)"),
 	SKIP_AIR("Skip Air Blocks", false, "When building, clones will skip over air blocks in the schematic");
 

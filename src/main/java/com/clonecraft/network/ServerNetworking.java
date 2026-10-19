@@ -79,6 +79,8 @@ public final class ServerNetworking {
 
 	private static void handleAction(final Payloads.CloneAction payload, final ServerPlayer player) {
 		CloneEntity clone = usable(player, payload.entityId());
+		CloneCraft.LOGGER.info("[CloneCraft] clone action {} on entity {} from {}: {}", payload.action(), payload.entityId(),
+			player.getGameProfile().name(), clone == null ? "REJECTED (not usable)" : "ok");
 		if (clone == null) {
 			return;
 		}
@@ -88,6 +90,7 @@ public final class ServerNetworking {
 			case Payloads.CloneAction.KILL -> {
 				player.closeContainer();
 				clone.kill(level);
+				CloneCraft.LOGGER.info("[CloneCraft] kill {}: alive afterwards = {}, health = {}", clone.getCloneName(), clone.isAlive(), clone.getHealth());
 			}
 			case Payloads.CloneAction.CLAIM -> {
 				clone.setOwner(player);

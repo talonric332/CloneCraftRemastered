@@ -34,6 +34,8 @@ DNA from any creature works, so you can also make zombie, cow, creeper... spawn 
   **Claim Clone**, **Copy Clone** (creative), **Kill** (press three times).
 - **Options**: Fight, Sprint, Follow, Pickup Items, Walk To Items, Retaliate, Guard Position, Wander, Jump (critical hits),
   Curious, Stats, Female, Break Blocks, Smart Memory (remembers chests), Farm, Share Items, Commandable, Skip Air Blocks.
+  With **Share Items** on, teammates standing together hand each other spare armour (if it beats what the other wears),
+  better weapons, bows and tools the other is missing, and even out food, arrows and torches.
   The name box at the top renames the clone and changes its skin.
 - **Teams**: Red/Orange/Yellow/Green/Blue/LightBlue/Purple/Pink fight other colours; Good only fights Evil;
   Evil fights everyone (including you); Rampant fights everything.

@@ -45,6 +45,8 @@ public class FollowCloneOwnerGoal extends Goal {
 	@Override
 	public void start() {
 		this.recalc = 0;
+		this.bestDist = Double.MAX_VALUE;
+		this.stuckTicks = 0;
 	}
 
 	@Override
@@ -63,14 +65,28 @@ public class FollowCloneOwnerGoal extends Goal {
 			return;
 		}
 		this.recalc = 10;
-		if (this.clone.distanceToSqr(this.owner) > 900.0) {
+		double dist = this.clone.distanceToSqr(this.owner);
+		if (dist > 900.0) {
 			this.teleportNear(this.owner);
+			return;
+		}
+		// Walk straight to the owner. Aiming at a random spot nearby often picked a point inside a block or in the
+		// air, which has no path, so the clone just stood still.
+		boolean hasPath = this.clone.getNavigation().moveTo(this.owner, 1.0);
+		// Give up walking and teleport if there's no way there, or it has made no progress for 4 seconds.
+		if (dist < this.bestDist - 1.0) {
+			this.bestDist = dist;
+			this.stuckTicks = 0;
 		} else {
-			double x = this.owner.getX() + this.clone.getRandom().nextInt(4) - 2;
-			double z = this.owner.getZ() + this.clone.getRandom().nextInt(4) - 2;
-			this.clone.getNavigation().moveTo(x, this.owner.getY(), z, 1.0);
+			this.stuckTicks += 10;
+		}
+		if (dist > 144.0 && (!hasPath || this.stuckTicks >= 80) && !this.owner.isInWater()) {
+			this.teleportNear(this.owner);
 		}
 	}
+
+	private double bestDist = Double.MAX_VALUE;
+	private int stuckTicks;
 
 	private void teleportNear(final Player owner) {
 		BlockPos base = owner.blockPosition();
