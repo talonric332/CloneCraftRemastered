@@ -3,6 +3,10 @@
 A rebuild of Jamezo97's **CloneCraft** (the mod DanTDM used to clone himself) for Minecraft 26.3,
 following how the original worked. Everything is in the **CloneCraft** creative tab.
 
+## Download
+Get the latest jar from the [Releases page](https://github.com/talonric332/CloneCraftRemastered/releases/latest).
+Put it in your `mods` folder with [Fabric API](https://modrinth.com/mod/fabric-api). Needs Fabric Loader 0.19.5+ for Minecraft 26.3, and Java 25.
+
 ## Making a clone (the original way)
 1. **Needle** (`III / I_I / _G_`: iron, gold). Use it in the air to take *your own* blood, or hit/right-click any creature for theirs.
 2. **Test Tube** (glass panes or glass in a U shape). Craft the blood needle with an empty test tube → **Test Tube of Blood**.
