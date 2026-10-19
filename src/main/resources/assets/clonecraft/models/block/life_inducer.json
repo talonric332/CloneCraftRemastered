@@ -1,0 +1,1 @@
+{ "parent": "minecraft:block/cube_bottom_top", "textures": { "side": "clonecraft:block/life_inducer_side", "top": "clonecraft:block/life_inducer_top", "bottom": "clonecraft:block/machine_bottom" } }

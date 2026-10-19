@@ -1,0 +1,5 @@
+{ "textures": { "particle": "clonecraft:block/antenna_charged", "pole": "clonecraft:block/antenna_charged" },
+  "elements": [ { "from": [6.4, 0, 6.4], "to": [9.6, 16, 9.6], "faces": {
+    "north": { "uv": [6, 0, 10, 16], "texture": "#pole" }, "south": { "uv": [6, 0, 10, 16], "texture": "#pole" },
+    "east": { "uv": [6, 0, 10, 16], "texture": "#pole" }, "west": { "uv": [6, 0, 10, 16], "texture": "#pole" },
+    "up": { "uv": [6, 6, 10, 10], "texture": "#pole" }, "down": { "uv": [6, 6, 10, 10], "texture": "#pole" } } } ] }

@@ -1,0 +1,1 @@
+{ "variants": { "water=0": { "model": "clonecraft:block/sterilizer" }, "water=1": { "model": "clonecraft:block/sterilizer_water" }, "water=2": { "model": "clonecraft:block/sterilizer_dirty" }, "water=3": { "model": "clonecraft:block/sterilizer_water" } } }

@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "clonecraft",
+	"version": "${version}",
+	"name": "CloneCraft Remastered",
+	"description": "A fan remaster of the classic CloneCraft mod. Throw a Clone Egg to clone yourself (or anyone, by name). Clones follow you, fight monsters, wear gear, and can battle in colored teams.",
+	"authors": [
+		"Talon"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/clonecraft/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.clonecraft.CloneCraft"
+		],
+		"client": [
+			"com.clonecraft.client.CloneCraftClient"
+		]
+	},
+	"mixins": [
+		"clonecraft.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

@@ -1,0 +1,1 @@
+{ "type": "minecraft:crafting_shaped", "category": "misc", "key": { "Y": "minecraft:iron_ingot", "D": "minecraft:diamond", "X": "minecraft:piston" }, "pattern": [ "XYX", "YDY", "XYX" ], "result": { "count": 1, "id": "clonecraft:centrifuge" } }

@@ -1,0 +1,1 @@
+{ "type": "minecraft:crafting_shaped", "category": "misc", "key": { "Y": "#minecraft:planks", "X": "minecraft:stick" }, "pattern": [ "  Y", " X ", "X  " ], "result": { "count": 1, "id": "clonecraft:schematic_selector" } }

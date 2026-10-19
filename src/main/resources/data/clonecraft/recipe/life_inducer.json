@@ -1,0 +1,1 @@
+{ "type": "minecraft:crafting_shaped", "category": "misc", "key": { "Y": "minecraft:soul_sand", "W": "minecraft:gold_ingot", "Z": "minecraft:chest", "X": "minecraft:iron_ingot" }, "pattern": [ "XWX", "XYX", "XZX" ], "result": { "count": 1, "id": "clonecraft:life_inducer" } }

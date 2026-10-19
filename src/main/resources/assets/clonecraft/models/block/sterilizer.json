@@ -1,0 +1,1 @@
+{ "parent": "minecraft:block/cauldron", "textures": { "particle": "clonecraft:block/machine_side", "top": "clonecraft:block/sterilizer_top", "bottom": "clonecraft:block/machine_bottom", "side": "clonecraft:block/machine_side", "inside": "clonecraft:block/sterilizer_inside" } }

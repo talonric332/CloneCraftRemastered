@@ -1,0 +1,1 @@
+{ "variants": { "charged=false": { "model": "clonecraft:block/antenna" }, "charged=true": { "model": "clonecraft:block/antenna_charged" } } }
