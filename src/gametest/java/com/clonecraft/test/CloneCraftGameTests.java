@@ -11,17 +11,22 @@ import com.clonecraft.entity.CloneEntity;
 import com.clonecraft.item.SchematicSelectorItem;
 import com.clonecraft.mixin.MobAccessor;
 import com.clonecraft.network.Payloads;
+import com.clonecraft.network.RemoteControl;
 import com.clonecraft.network.ServerNetworking;
 import com.clonecraft.schematic.SchematicStore;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -206,6 +211,44 @@ public class CloneCraftGameTests {
 		} catch (ReflectiveOperationException | java.io.IOException e) {
 			throw new RuntimeException(e);
 		}
+		h.succeed();
+	}
+
+	// ---------------------------------------------------------------- Bulk Edit: attack / break lists
+
+	@GameTest
+	public void bulkEditChangesAttackAndBreakLists(final GameTestHelper h) {
+		floor(h);
+		ServerPlayer player = h.makeMockServerPlayerInLevel();
+		player.getInventory().add(new ItemStack(CloneCraft.CLONE_REMOTE));
+		CloneEntity first = stillClone(h, 1, 1);
+		CloneEntity second = stillClone(h, 3, 1);
+		CloneEntity notChosen = stillClone(h, 5, 1);
+		for (CloneEntity clone : List.of(first, second, notChosen)) {
+			clone.setOwner(player);
+		}
+		Identifier zombie = Identifier.withDefaultNamespace("zombie");
+		Identifier cow = Identifier.withDefaultNamespace("cow");
+		Identifier skeleton = Identifier.withDefaultNamespace("skeleton");
+		Identifier stone = Identifier.withDefaultNamespace("stone");
+		Identifier diamondOre = Identifier.withDefaultNamespace("diamond_ore");
+		Identifier junk = Identifier.withDefaultNamespace("not_a_real_thing");
+		first.attackTypes.addAll(List.of(zombie, cow));
+		first.breakBlocks.add(stone);
+		notChosen.attackTypes.add(cow);
+		notChosen.breakBlocks.add(stone);
+
+		// Attack: add skeletons, remove cows. Break: replace the whole list with diamond ore. Junk names must be ignored.
+		RemoteControl.bulkEdit(new Payloads.BulkEdit(List.of(first.getUUID(), second.getUUID()), 0, 0, -1, Optional.empty(),
+			new Payloads.ListEdit(List.of(skeleton, junk), List.of(cow), false),
+			new Payloads.ListEdit(List.of(diamondOre, junk), List.of(), true)), player);
+
+		h.assertValueEqual(Set.copyOf(first.attackTypes), Set.of(zombie, skeleton), "first clone's attack list");
+		h.assertValueEqual(Set.copyOf(second.attackTypes), Set.of(skeleton), "second clone's attack list");
+		h.assertValueEqual(Set.copyOf(first.breakBlocks), Set.of(diamondOre), "first clone's break list");
+		h.assertValueEqual(Set.copyOf(second.breakBlocks), Set.of(diamondOre), "second clone's break list");
+		h.assertValueEqual(Set.copyOf(notChosen.attackTypes), Set.of(cow), "unchosen clone's attack list");
+		h.assertValueEqual(Set.copyOf(notChosen.breakBlocks), Set.of(stone), "unchosen clone's break list");
 		h.succeed();
 	}
 

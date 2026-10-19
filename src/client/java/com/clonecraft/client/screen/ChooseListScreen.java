@@ -32,13 +32,14 @@ import net.minecraft.world.level.block.Block;
 public class ChooseListScreen extends CloneSubScreen {
 	public enum Kind { ENTITIES, BLOCKS }
 
-	private record Entry(Identifier id, Component name, ItemStack icon, String group) {}
+	/** One mob or block in the list. group is "mob"/"animal"/"other" for mobs and "ore"/"tree"/"other" for blocks. */
+	record Entry(Identifier id, Component name, ItemStack icon, String group) {}
 
-	private static final int ROW = 20;
+	static final int ROW = 20;
 
 	private final Kind kind;
-	private final List<Entry> all = new ArrayList<>();
-	private List<Entry> shown = new ArrayList<>();
+	private final List<Entry> all;
+	private List<Entry> shown;
 	private final Set<Identifier> selected = new HashSet<>();
 	private boolean loaded;
 	private boolean dirty;
@@ -50,6 +51,15 @@ public class ChooseListScreen extends CloneSubScreen {
 	public ChooseListScreen(final CloneEntity clone, final Kind kind) {
 		super(clone, Component.literal(kind == Kind.ENTITIES ? "Entities To Attack" : "Blocks To Break"));
 		this.kind = kind;
+		this.all = entries(kind);
+		this.shown = new ArrayList<>(this.all);
+		ClientNetworking.LISTS.remove(clone.getId());
+		ClientNetworking.send(new Payloads.CloneAction(clone.getId(), Payloads.CloneAction.REQUEST_LISTS, 0));
+	}
+
+	/** Every mob (or block) a clone can be told to attack (or break), sorted by name. Shared with the bulk editor. */
+	static List<Entry> entries(final Kind kind) {
+		List<Entry> all = new ArrayList<>();
 		if (kind == Kind.ENTITIES) {
 			for (EntityType<?> type : BuiltInRegistries.ENTITY_TYPE) {
 				if (!DefaultAttributes.hasSupplier(type) || type == EntityTypes.PLAYER || type == EntityTypes.ARMOR_STAND || type == EntityTypes.MANNEQUIN
@@ -57,7 +67,7 @@ public class ChooseListScreen extends CloneSubScreen {
 					continue;
 				}
 				String group = type.getCategory() == MobCategory.MONSTER ? "mob" : (type.getCategory() == MobCategory.MISC ? "other" : "animal");
-				this.all.add(new Entry(BuiltInRegistries.ENTITY_TYPE.getKey(type), type.getDescription(), ItemStack.EMPTY, group));
+				all.add(new Entry(BuiltInRegistries.ENTITY_TYPE.getKey(type), type.getDescription(), ItemStack.EMPTY, group));
 			}
 		} else {
 			for (Block block : BuiltInRegistries.BLOCK) {
@@ -68,13 +78,11 @@ public class ChooseListScreen extends CloneSubScreen {
 				}
 				var state = block.defaultBlockState();
 				String group = state.is(net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags.ORES) ? "ore" : state.is(BlockTags.LOGS) ? "tree" : "other";
-				this.all.add(new Entry(BuiltInRegistries.BLOCK.getKey(block), block.getName(), new ItemStack(item), group));
+				all.add(new Entry(BuiltInRegistries.BLOCK.getKey(block), block.getName(), new ItemStack(item), group));
 			}
 		}
-		this.all.sort((a, b) -> a.name.getString().compareToIgnoreCase(b.name.getString()));
-		this.shown = new ArrayList<>(this.all);
-		ClientNetworking.LISTS.remove(clone.getId());
-		ClientNetworking.send(new Payloads.CloneAction(clone.getId(), Payloads.CloneAction.REQUEST_LISTS, 0));
+		all.sort((a, b) -> a.name.getString().compareToIgnoreCase(b.name.getString()));
+		return all;
 	}
 
 	@Override

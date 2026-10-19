@@ -108,18 +108,37 @@ public final class Payloads {
 	}
 
 	/**
+	 * A change to an "Entities To Attack" or "Blocks To Break" list. Entries in add are added and entries in remove are removed;
+	 * anything else is left alone. With replace on, the list becomes exactly the add entries instead.
+	 */
+	public record ListEdit(List<Identifier> add, List<Identifier> remove, boolean replace) {
+		public static final int MAX_ENTRIES = 4096;
+		public static final ListEdit NONE = new ListEdit(List.of(), List.of(), false);
+
+		public static final StreamCodec<ByteBuf, ListEdit> CODEC = StreamCodec.composite(
+			Identifier.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_ENTRIES)), ListEdit::add, Identifier.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_ENTRIES)), ListEdit::remove,
+			ByteBufCodecs.BOOL, ListEdit::replace, ListEdit::new);
+
+		public boolean isEmpty() {
+			return !this.replace && this.add.isEmpty() && this.remove.isEmpty();
+		}
+	}
+
+	/**
 	 * The Clone Remote's bulk editor: applies the same changes to many clones at once. Options in setMask are turned on and
 	 * options in clearMask turned off (others are left alone). team is a CloneTeam ordinal, or -1 to leave it. If listSource
-	 * is present, that clone's "Entities To Attack" and "Blocks To Break" lists are copied to every chosen clone.
+	 * is present, that clone's "Entities To Attack" and "Blocks To Break" lists are copied to every chosen clone first, then
+	 * attackEdit and breakEdit are applied on top.
 	 */
-	public record BulkEdit(List<UUID> clones, int setMask, int clearMask, int team, Optional<UUID> listSource) implements CustomPacketPayload {
+	public record BulkEdit(List<UUID> clones, int setMask, int clearMask, int team, Optional<UUID> listSource, ListEdit attackEdit,
+		ListEdit breakEdit) implements CustomPacketPayload {
 		public static final int MAX_CLONES = 1024;
 
 		public static final Type<BulkEdit> TYPE = new Type<>(CloneCraft.id("bulk_edit"));
 		public static final StreamCodec<ByteBuf, BulkEdit> CODEC = StreamCodec.composite(
 			UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_CLONES)), BulkEdit::clones, ByteBufCodecs.VAR_INT, BulkEdit::setMask,
 			ByteBufCodecs.VAR_INT, BulkEdit::clearMask, ByteBufCodecs.VAR_INT, BulkEdit::team, ByteBufCodecs.optional(UUIDUtil.STREAM_CODEC), BulkEdit::listSource,
-			BulkEdit::new);
+			ListEdit.CODEC, BulkEdit::attackEdit, ListEdit.CODEC, BulkEdit::breakEdit, BulkEdit::new);
 
 		@Override
 		public Type<? extends CustomPacketPayload> type() {
