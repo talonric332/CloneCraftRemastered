@@ -1,18 +1,12 @@
 package com.clonecraft.client.screen;
 
 import com.clonecraft.client.ClientNetworking;
-import com.clonecraft.clone.CloneOption;
-import com.clonecraft.clone.CloneTeam;
 import com.clonecraft.network.Payloads;
-import com.clonecraft.network.RemoteControl;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,37 +14,28 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 /**
- * The Clone Remote's bulk editor. Tick the clones on the left, then choose what to change on the right: each option can be
- * left alone, turned on or turned off, the team can be set, one clone's attack/break lists can be copied to the rest, and
- * mobs/blocks can be added to or removed from every clone's attack/break lists.
- * Anything left on "Keep" isn't touched. Names (and Female, which picks the name) can't be bulk edited.
+ * The Clone Remote's bulk editor. Tick the clones on the left, then pick what to change with the three buttons on the
+ * right (Entities To Attack, Blocks To Break, Options), then press Apply. Each button shows what will change.
+ * Nothing happens to the clones until Apply. Names (and Female, which picks the name) can't be bulk edited.
  */
 public class CloneBulkEditScreen extends Screen {
 	private static final int ROW = 14;
 	private static final int TOP = 30;
-	private static final int KEEP = 0;
-	private static final int ON = 1;
-	private static final int OFF = 2;
 
 	private final Screen parent;
 	private final List<Payloads.RemoteClone> clones;
 	private final Set<UUID> selected = new LinkedHashSet<>();
-	private final List<CloneOption> options = new ArrayList<>();
-	private final int[] optionState;
-	private final List<Button> optionButtons = new ArrayList<>();
-	private int team = -1;
-	private int listSource = -1;
 	private final BulkListScreen.Changes attackChanges = new BulkListScreen.Changes();
 	private final BulkListScreen.Changes breakChanges = new BulkListScreen.Changes();
-	private Button teamButton;
-	private Button listButton;
-	private Button attackButton;
-	private Button breakButton;
+	private final BulkOptionsScreen.Changes optionChanges = new BulkOptionsScreen.Changes();
 	private Button applyButton;
 	private double scroll;
 	private int listX;
 	private int listW;
 	private int listBottom;
+	private int menuX;
+	private int menuW;
+	private int[] menuY = new int[3];
 
 	public CloneBulkEditScreen(final Screen parent, final List<Payloads.RemoteClone> clones) {
 		super(Component.literal("Bulk Edit Clones"));
@@ -59,12 +44,6 @@ public class CloneBulkEditScreen extends Screen {
 		for (Payloads.RemoteClone clone : clones) {
 			this.selected.add(clone.uuid());
 		}
-		for (CloneOption option : CloneOption.values()) {
-			if ((option.bit() & RemoteControl.BULK_LOCKED) == 0) {
-				this.options.add(option);
-			}
-		}
-		this.optionState = new int[this.options.size()];
 	}
 
 	@Override
@@ -84,111 +63,41 @@ public class CloneBulkEditScreen extends Screen {
 			this.refreshApply();
 		}).bounds(this.listX + this.listW / 2 + 2, listBy, this.listW - this.listW / 2 - 2, 20).build());
 
-		// The right side: one button per option, then Team, Lists, Attack and Break, laid out in as many columns as needed to fit.
-		int x0 = this.listX + this.listW + 10;
-		int areaW = this.width - 10 - x0;
-		int gap = 4;
-		int count = this.options.size() + 4;
-		int avail = this.listBottom - TOP;
-		int columns = 1;
-		while (columns < 4 && avail / (int)Math.ceil(count / (double)columns) < 18) {
-			columns++;
+		// The menu: three big buttons, each with a line under it saying what will change.
+		int areaX = this.listX + this.listW + 10;
+		int areaW = this.width - 10 - areaX;
+		this.menuW = Math.min(areaW, 220);
+		this.menuX = areaX + (areaW - this.menuW) / 2;
+		int step = Math.max(34, Math.min(46, (this.listBottom - TOP) / 3));
+		int start = TOP + Math.max(0, (this.listBottom - TOP - step * 3) / 2);
+		for (int i = 0; i < 3; i++) {
+			this.menuY[i] = start + i * step;
 		}
-		columns = Math.max(columns, areaW >= 300 ? 2 : 1);
-		int rows = (int)Math.ceil(count / (double)columns);
-		int buttonW = (areaW - gap * (columns - 1)) / columns;
-		int buttonH = Math.max(12, Math.min(20, avail / rows - gap));
-
-		this.optionButtons.clear();
-		for (int i = 0; i < count; i++) {
-			int x = x0 + (i / rows) * (buttonW + gap);
-			int y = TOP + (i % rows) * (buttonH + gap);
-			if (i < this.options.size()) {
-				int index = i;
-				Button button = Button.builder(this.optionLabel(index), b -> {
-					this.optionState[index] = (this.optionState[index] + 1) % 3;
-					b.setMessage(this.optionLabel(index));
-					this.refreshApply();
-				}).bounds(x, y, buttonW, buttonH).build();
-				this.optionButtons.add(this.addRenderableWidget(button));
-			} else if (i == this.options.size()) {
-				this.teamButton = this.addRenderableWidget(Button.builder(this.teamLabel(), b -> {
-					this.team = this.team + 1 >= CloneTeam.values().length ? -1 : this.team + 1;
-					b.setMessage(this.teamLabel());
-					this.refreshApply();
-				}).bounds(x, y, buttonW, buttonH).build());
-			} else if (i == this.options.size() + 1) {
-				int labelW = buttonW - 12;
-				this.listButton = this.addRenderableWidget(Button.builder(this.listLabel(labelW), b -> {
-					this.listSource = this.listSource + 1 >= this.clones.size() ? -1 : this.listSource + 1;
-					b.setMessage(this.listLabel(labelW));
-					this.refreshApply();
-				}).bounds(x, y, buttonW, buttonH).build());
-				this.listButton.active = !this.clones.isEmpty();
-			} else if (i == this.options.size() + 2) {
-				this.attackButton = this.addRenderableWidget(Button.builder(
-					Component.literal("Attack: ").append(this.attackChanges.summary()),
-					b -> this.minecraft.gui.setScreen(new BulkListScreen(this, ChooseListScreen.Kind.ENTITIES, this.attackChanges)))
-					.bounds(x, y, buttonW, buttonH).build());
-			} else {
-				this.breakButton = this.addRenderableWidget(Button.builder(
-					Component.literal("Break: ").append(this.breakChanges.summary()),
-					b -> this.minecraft.gui.setScreen(new BulkListScreen(this, ChooseListScreen.Kind.BLOCKS, this.breakChanges)))
-					.bounds(x, y, buttonW, buttonH).build());
-			}
-		}
+		this.addRenderableWidget(Button.builder(Component.literal("Entities To Attack..."),
+			b -> this.minecraft.gui.setScreen(new BulkListScreen(this, ChooseListScreen.Kind.ENTITIES, this.attackChanges)))
+			.bounds(this.menuX, this.menuY[0], this.menuW, 20).build());
+		this.addRenderableWidget(Button.builder(Component.literal("Blocks To Break..."),
+			b -> this.minecraft.gui.setScreen(new BulkListScreen(this, ChooseListScreen.Kind.BLOCKS, this.breakChanges)))
+			.bounds(this.menuX, this.menuY[1], this.menuW, 20).build());
+		this.addRenderableWidget(Button.builder(Component.literal("Options..."),
+			b -> this.minecraft.gui.setScreen(new BulkOptionsScreen(this, this.optionChanges)))
+			.bounds(this.menuX, this.menuY[2], this.menuW, 20).build());
 
 		int by = this.height - 26;
-		int bx = x0 + Math.max(0, (areaW - 244) / 2);
+		int bx = areaX + Math.max(0, (areaW - 244) / 2);
 		this.addRenderableWidget(Button.builder(Component.literal("Reset"), b -> {
-			Arrays.fill(this.optionState, KEEP);
-			this.team = -1;
-			this.listSource = -1;
 			this.attackChanges.reset();
 			this.breakChanges.reset();
-			this.rebuildWidgets();
+			this.optionChanges.reset();
+			this.refreshApply();
 		}).bounds(bx, by, 76, 20).build());
 		this.applyButton = this.addRenderableWidget(Button.builder(Component.literal("Apply"), b -> this.apply()).bounds(bx + 80, by, 80, 20).build());
 		this.addRenderableWidget(Button.builder(Component.literal("Back"), b -> this.onClose()).bounds(bx + 164, by, 80, 20).build());
 		this.refreshApply();
 	}
 
-	private Component optionLabel(final int index) {
-		CloneOption option = this.options.get(index);
-		return Component.literal(option.label + ": ").append(switch (this.optionState[index]) {
-			case ON -> Component.literal("ON").withStyle(ChatFormatting.GREEN);
-			case OFF -> Component.literal("OFF").withStyle(ChatFormatting.RED);
-			default -> Component.literal("Keep").withStyle(ChatFormatting.GRAY);
-		});
-	}
-
-	private Component teamLabel() {
-		if (this.team < 0) {
-			return Component.literal("Team: ").append(Component.literal("Keep").withStyle(ChatFormatting.GRAY));
-		}
-		CloneTeam t = CloneTeam.values()[this.team];
-		return Component.literal("Team: ").append(Component.literal(t.displayName).withColor(t.color));
-	}
-
-	private Component listLabel(final int width) {
-		if (this.listSource < 0) {
-			return Component.literal("Lists: ").append(Component.literal("Keep").withStyle(ChatFormatting.GRAY));
-		}
-		String prefix = "Lists from ";
-		String name = this.font.plainSubstrByWidth(this.clones.get(this.listSource).name(), Math.max(10, width - this.font.width(prefix)));
-		return Component.literal(prefix).append(Component.literal(name).withStyle(ChatFormatting.AQUA));
-	}
-
 	private boolean hasChanges() {
-		if (this.team >= 0 || this.listSource >= 0 || !this.attackChanges.isEmpty() || !this.breakChanges.isEmpty()) {
-			return true;
-		}
-		for (int state : this.optionState) {
-			if (state != KEEP) {
-				return true;
-			}
-		}
-		return false;
+		return !this.attackChanges.isEmpty() || !this.breakChanges.isEmpty() || !this.optionChanges.isEmpty();
 	}
 
 	private void refreshApply() {
@@ -198,21 +107,12 @@ public class CloneBulkEditScreen extends Screen {
 	}
 
 	private void apply() {
-		int set = 0;
-		int clear = 0;
-		for (int i = 0; i < this.options.size(); i++) {
-			if (this.optionState[i] == ON) {
-				set |= this.options.get(i).bit();
-			} else if (this.optionState[i] == OFF) {
-				clear |= this.options.get(i).bit();
-			}
-		}
-		Optional<UUID> source = this.listSource >= 0 ? Optional.of(this.clones.get(this.listSource).uuid()) : Optional.empty();
 		List<UUID> targets = new ArrayList<>(this.selected);
 		if (targets.size() > Payloads.BulkEdit.MAX_CLONES) {
 			targets = targets.subList(0, Payloads.BulkEdit.MAX_CLONES);
 		}
-		ClientNetworking.send(new Payloads.BulkEdit(targets, set, clear, this.team, source, this.attackChanges.toPayload(), this.breakChanges.toPayload()));
+		ClientNetworking.send(new Payloads.BulkEdit(targets, this.optionChanges.setMask(), this.optionChanges.clearMask(), this.optionChanges.team,
+			this.attackChanges.toPayload(), this.breakChanges.toPayload()));
 		this.onClose();
 	}
 
@@ -257,27 +157,15 @@ public class CloneBulkEditScreen extends Screen {
 	@Override
 	public void extractRenderState(final GuiGraphicsExtractor g, final int mouseX, final int mouseY, final float a) {
 		super.extractRenderState(g, mouseX, mouseY, a);
-		g.centeredText(this.font, "Bulk Edit (" + this.selected.size() + " of " + this.clones.size() + " selected)", this.width / 2, 6, 0xFFFFFFFF);
+		g.centeredText(this.font, "Bulk Edit (" + this.selected.size() + " of " + this.clones.size() + " clones selected)", this.width / 2, 6, 0xFFFFFFFF);
+		g.centeredText(this.font, this.font.plainSubstrByWidth("Tick clones on the left, choose what to change, then press Apply.", this.width - 20),
+			this.width / 2, 17, 0xFFAAAAAA);
 
-		String hint = "Click an option to cycle Keep / ON / OFF. Names aren't changed.";
-		for (int i = 0; i < this.optionButtons.size(); i++) {
-			if (this.optionButtons.get(i).isHovered()) {
-				hint = this.options.get(i).description;
-			}
+		// What each menu button will change.
+		Component[] summaries = {this.attackChanges.summary(), this.breakChanges.summary(), this.optionChanges.summary()};
+		for (int i = 0; i < 3; i++) {
+			g.centeredText(this.font, summaries[i], this.menuX + this.menuW / 2, this.menuY[i] + 23, 0xFFFFFFFF);
 		}
-		if (this.teamButton != null && this.teamButton.isHovered()) {
-			hint = this.team < 0 ? "Click to choose a team for every selected clone." : CloneTeam.values()[this.team].info();
-		}
-		if (this.listButton != null && this.listButton.isHovered()) {
-			hint = "Copy one clone's 'Entities To Attack' and 'Blocks To Break' lists to every selected clone.";
-		}
-		if (this.attackButton != null && this.attackButton.isHovered()) {
-			hint = "Pick mobs to add to or remove from every selected clone's 'Entities To Attack' list.";
-		}
-		if (this.breakButton != null && this.breakButton.isHovered()) {
-			hint = "Pick blocks to add to or remove from every selected clone's 'Blocks To Break' list.";
-		}
-		g.centeredText(this.font, this.font.plainSubstrByWidth(hint, this.width - 20), this.width / 2, 17, 0xFFAAAAAA);
 
 		int left = this.listX;
 		int right = this.listX + this.listW;
@@ -293,8 +181,7 @@ public class CloneBulkEditScreen extends Screen {
 			boolean hover = mouseX >= left && mouseX < right && mouseY >= y && mouseY < y + ROW && mouseY >= TOP && mouseY < this.listBottom;
 			g.fill(left, y, right, y + ROW - 1, on ? 0x6633AA33 : (hover ? 0x44FFFFFF : 0x22FFFFFF));
 			g.text(this.font, on ? "✔" : "", left + 3, y + 3, 0xFF55FF55);
-			String label = clone.name() + (i == this.listSource ? " (lists)" : "");
-			g.text(this.font, this.font.plainSubstrByWidth(label, this.listW - 16), left + 13, y + 3, on ? 0xFF88FF88 : 0xFFFFFFFF);
+			g.text(this.font, this.font.plainSubstrByWidth(clone.name(), this.listW - 16), left + 13, y + 3, on ? 0xFF88FF88 : 0xFFFFFFFF);
 		}
 		g.disableScissor();
 	}

@@ -34,7 +34,7 @@ public class BulkEditScreenshotsClientTest implements FabricClientGameTest {
 		context.waitTicks(5);
 		context.takeScreenshot("bulk_edit_1_main");
 
-		context.clickScreenButton("Attack: Keep");
+		context.clickScreenButton("Entities To Attack...");
 		context.waitTicks(5);
 		context.takeScreenshot("bulk_edit_2_attack_list");
 
@@ -46,7 +46,7 @@ public class BulkEditScreenshotsClientTest implements FabricClientGameTest {
 		context.waitTicks(5);
 		context.takeScreenshot("bulk_edit_4_back_with_changes");
 
-		context.clickScreenButton("Break: Keep");
+		context.clickScreenButton("Blocks To Break...");
 		context.waitTicks(2);
 		context.clickScreenButton("+ Ores");
 		context.clickScreenButton("Others: Keep");
@@ -54,7 +54,17 @@ public class BulkEditScreenshotsClientTest implements FabricClientGameTest {
 		context.takeScreenshot("bulk_edit_5_break_replace");
 		context.clickScreenButton("Done");
 		context.waitTicks(5);
-		context.takeScreenshot("bulk_edit_6_final");
+		context.takeScreenshot("bulk_edit_6_back_with_lists");
+		context.clickScreenButton("Options...");
+		context.waitTicks(2);
+		context.clickScreenButton("Sprint: Keep");
+		context.clickScreenButton("Wander: Keep");
+		context.clickScreenButton("Wander: ON");
+		context.waitTicks(5);
+		context.takeScreenshot("bulk_edit_7_options");
+		context.clickScreenButton("Done");
+		context.waitTicks(5);
+		context.takeScreenshot("bulk_edit_8_final");
 		context.setScreen(() -> null);
 	}
 }

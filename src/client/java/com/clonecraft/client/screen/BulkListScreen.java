@@ -48,16 +48,24 @@ public class BulkListScreen extends Screen {
 			return new Payloads.ListEdit(add, this.replace ? List.of() : remove, this.replace);
 		}
 
-		/** Short summary for the Bulk Edit button, e.g. "Keep", "+3 -1" or "only 3". */
+		/** One line for the Bulk Edit screen, e.g. "No changes", "Add 3, remove 1" or "Replace with 3". */
 		Component summary() {
 			if (this.isEmpty()) {
-				return Component.literal("Keep").withStyle(ChatFormatting.GRAY);
+				return Component.literal("No changes").withStyle(ChatFormatting.GRAY);
 			}
 			if (this.replace) {
-				return Component.literal("only " + this.count(ADD)).withStyle(ChatFormatting.GOLD);
+				return Component.literal("Replace list with " + this.count(ADD)).withStyle(ChatFormatting.GOLD);
 			}
-			return Component.literal("+" + this.count(ADD)).withStyle(ChatFormatting.GREEN)
-				.append(Component.literal(" -" + this.count(REMOVE)).withStyle(ChatFormatting.RED));
+			int add = this.count(ADD);
+			int remove = this.count(REMOVE);
+			if (remove == 0) {
+				return Component.literal("Add " + add).withStyle(ChatFormatting.GREEN);
+			}
+			if (add == 0) {
+				return Component.literal("Remove " + remove).withStyle(ChatFormatting.RED);
+			}
+			return Component.literal("Add " + add).withStyle(ChatFormatting.GREEN)
+				.append(Component.literal(", remove " + remove).withStyle(ChatFormatting.RED));
 		}
 	}
 
@@ -72,8 +80,7 @@ public class BulkListScreen extends Screen {
 	private Button othersButton;
 
 	public BulkListScreen(final Screen parent, final ChooseListScreen.Kind kind, final Changes changes) {
-		super(Component.literal(kind == ChooseListScreen.Kind.ENTITIES ? "Bulk Edit: Entities To Attack" : "Bulk Edit: Blocks To Break"));
-		this.parent = parent;
+		super(Component.literal(kind == ChooseListScreen.Kind.ENTITIES ? "Bulk Edit: Entities To Attack" : "Bulk Edit: Blocks To Break"));		this.parent = parent;
 		this.kind = kind;
 		this.changes = changes;
 		this.all = ChooseListScreen.entries(kind);
