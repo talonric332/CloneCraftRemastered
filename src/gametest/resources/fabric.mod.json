@@ -9,6 +9,7 @@
 			"com.clonecraft.test.CloneCraftGameTests"
 		],
 		"fabric-client-gametest": [
+			"com.clonecraft.test.BulkEditEndToEndClientTest",
 			"com.clonecraft.test.BulkEditScreenshotsClientTest",
 			"com.clonecraft.test.WatchFixesClientTest"
 		]

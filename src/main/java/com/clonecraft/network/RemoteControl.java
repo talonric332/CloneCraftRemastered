@@ -112,7 +112,7 @@ public final class RemoteControl {
 	/** Options the bulk editor never touches: they're part of who the clone is (Female also picks its name), not how it behaves. */
 	public static final int BULK_LOCKED = CloneOption.FEMALE.bit();
 
-	/** Applies the same option, team and list changes to many owned clones. Names are never changed here. */
+	/** Applies the same option, team and attack/break list changes to many owned clones. Names are never changed here. */
 	public static void bulkEdit(final Payloads.BulkEdit payload, final ServerPlayer player) {
 		if (!hasRemote(player)) {
 			return;
@@ -120,12 +120,6 @@ public final class RemoteControl {
 		int clear = payload.clearMask() & ~BULK_LOCKED;
 		int set = payload.setMask() & ~BULK_LOCKED & ~clear;
 		CloneTeam team = payload.team() >= 0 && payload.team() < CloneTeam.values().length ? CloneTeam.values()[payload.team()] : null;
-		CloneEntity source = payload.listSource().map(id -> find(player, id)).orElse(null);
-		if (payload.listSource().isPresent() && source == null) {
-			player.sendSystemMessage(Component.literal("Couldn't find the clone to copy lists from.").withStyle(ChatFormatting.RED));
-		}
-		List<Identifier> attack = source == null ? null : List.copyOf(source.attackTypes);
-		List<Identifier> blocks = source == null ? null : List.copyOf(source.breakBlocks);
 		Payloads.ListEdit attackEdit = valid(payload.attackEdit(), BuiltInRegistries.ENTITY_TYPE);
 		Payloads.ListEdit breakEdit = valid(payload.breakEdit(), BuiltInRegistries.BLOCK);
 
@@ -140,12 +134,6 @@ public final class RemoteControl {
 			}
 			if (team != null) {
 				clone.setCloneTeam(team);
-			}
-			if (source != null && clone != source) {
-				clone.attackTypes.clear();
-				clone.attackTypes.addAll(attack);
-				clone.breakBlocks.clear();
-				clone.breakBlocks.addAll(blocks);
 			}
 			applyListEdit(clone.attackTypes, attackEdit);
 			applyListEdit(clone.breakBlocks, breakEdit);

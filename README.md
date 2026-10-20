@@ -46,13 +46,14 @@ dimension), with buttons to **Manage** a clone from any distance, change its **M
 or **Teleport All**. Claiming a clone hides its Claim button.
 
 **Bulk Edit** changes many clones at once:
-- Tick the clones to change in the list on the left (all are ticked to start; **All** / **None** to select quickly).
-- Click an option to cycle it between **Keep**, **ON** and **OFF**. Options left on Keep aren't touched on any clone.
-- **Team** sets every ticked clone's team, and **Lists** copies one clone's Entities To Attack and Blocks To Break lists to the rest.
-- **Attack** and **Break** open a searchable list of mobs or blocks. Click an entry to cycle it between **Keep**, **Add** and
-  **Remove**, or use the quick buttons (+ Monsters, + Ores, ...). Set **Others** to **Remove** to replace each clone's whole list
-  with just the entries you added.
-- Press **Apply**. Hover a button to read what it does; **Reset** puts everything back to Keep.
+1. Tick the clones to change in the list on the left (all are ticked to start; **All** / **None** to select quickly).
+2. Choose what to change with the three buttons on the right. Under each one you can see what will change.
+   - **Entities To Attack** and **Blocks To Break** open a searchable list of mobs or blocks. Click an entry to cycle it between
+     **Keep**, **Add** and **Remove**, or use the quick buttons (+ Monsters, + Ores, ...). Set **Others** to **Remove** to replace
+     each clone's whole list with just the entries you added.
+   - **Options** opens every clone option: click one to cycle it between **Keep**, **ON** and **OFF**, and set the **Team**.
+   - Anything left on Keep isn't touched on any clone. Press **Done** to go back.
+3. Press **Apply**. Nothing changes until you do; **Reset** puts everything back to Keep.
 
 Bulk Edit never changes a clone's name or its Female option, so each clone keeps its own name and skin.
 

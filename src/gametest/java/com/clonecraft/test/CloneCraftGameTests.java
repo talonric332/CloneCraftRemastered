@@ -19,7 +19,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -239,7 +238,7 @@ public class CloneCraftGameTests {
 		notChosen.breakBlocks.add(stone);
 
 		// Attack: add skeletons, remove cows. Break: replace the whole list with diamond ore. Junk names must be ignored.
-		RemoteControl.bulkEdit(new Payloads.BulkEdit(List.of(first.getUUID(), second.getUUID()), 0, 0, -1, Optional.empty(),
+		RemoteControl.bulkEdit(new Payloads.BulkEdit(List.of(first.getUUID(), second.getUUID()), 0, 0, -1,
 			new Payloads.ListEdit(List.of(skeleton, junk), List.of(cow), false),
 			new Payloads.ListEdit(List.of(diamondOre, junk), List.of(), true)), player);
 
