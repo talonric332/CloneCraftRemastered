@@ -2,6 +2,11 @@ package com.clonecraft;
 
 import com.clonecraft.clone.CloneOption;
 import com.clonecraft.clone.CloneTeam;
+import com.clonecraft.clone.learning.CombatBrain;
+import com.clonecraft.clone.learning.CombatBrains;
+import com.clonecraft.clone.learning.CombatMove;
+import com.clonecraft.clone.learning.MiningBrain;
+import com.clonecraft.clone.learning.MiningMove;
 import com.clonecraft.entity.CloneEntity;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -55,7 +60,71 @@ public final class CloneCommands {
 				.then(Commands.literal("follow").executes(ctx -> mode(ctx, CloneOption.FOLLOW)))
 				.then(Commands.literal("stay").executes(ctx -> mode(ctx, CloneOption.GUARD)))
 				.then(Commands.literal("wander").executes(ctx -> mode(ctx, CloneOption.WANDER))))
-			.then(Commands.literal("killall").executes(CloneCommands::killAll)));
+			.then(Commands.literal("killall").executes(CloneCommands::killAll))
+			// Anyone can see (and reset) what their own clones have learned about fighting.
+			.then(Commands.literal("skill").executes(CloneCommands::skill)
+				.then(Commands.literal("reset").executes(CloneCommands::resetSkill))));
+	}
+
+	private static int skill(final CommandContext<CommandSourceStack> ctx) {
+		CommandSourceStack source = ctx.getSource();
+		ServerPlayer player = source.getPlayer();
+		CombatBrain brain = CombatBrains.get(source.getLevel(), player == null ? null : player.getUUID());
+		String who = player == null ? "Unowned clones" : "Your clones";
+		if (brain.fights == 0) {
+			source.sendSuccess(() -> Component.literal(who + " haven't learned anything about fighting yet.").withStyle(ChatFormatting.GRAY), false);
+			mining(source, player);
+			return 0;
+		}
+		long total = Math.max(1L, Arrays.stream(brain.moveCounts).sum());
+		CombatMove[] all = CombatMove.values();
+		Integer[] order = new Integer[all.length];
+		for (int i = 0; i < all.length; i++) {
+			order[i] = i;
+		}
+		Arrays.sort(order, (a, b) -> Long.compare(brain.moveCounts[b], brain.moveCounts[a]));
+		StringBuilder moves = new StringBuilder();
+		for (int i : order) {
+			long percent = brain.moveCounts[i] * 100 / total;
+			if (percent >= 1) {
+				moves.append(moves.isEmpty() ? "" : ", ").append(all[i].description).append(' ').append(percent).append('%');
+			}
+		}
+		String text = who + "' fighting brain: " + brain.fights + " fights, " + brain.wins + " won, " + brain.deaths + " clones lost.\n"
+			+ String.format(java.util.Locale.ROOT, "Lately: %.1f damage dealt and %.1f taken per fight. Still trying new moves %d%% of the time.%n",
+				brain.avgDealt, brain.avgTaken, Math.round(brain.exploreChance() * 100))
+			+ "Moves used: " + moves;
+		source.sendSuccess(() -> Component.literal(text).withStyle(ChatFormatting.AQUA), false);
+		mining(source, player);
+		return brain.fights;
+	}
+
+	private static void mining(final CommandSourceStack source, final @Nullable ServerPlayer player) {
+		MiningBrain brain = CombatBrains.MINING.get(source.getLevel(), player == null ? null : player.getUUID());
+		if (brain.stretches == 0) {
+			source.sendSuccess(() -> Component.literal("No mining learned yet.").withStyle(ChatFormatting.GRAY), false);
+			return;
+		}
+		long total = Math.max(1L, Arrays.stream(brain.moveCounts).sum());
+		StringBuilder moves = new StringBuilder();
+		for (MiningMove move : MiningMove.values()) {
+			long percent = brain.moveCounts[move.ordinal()] * 100 / total;
+			if (percent >= 1) {
+				moves.append(moves.isEmpty() ? "" : ", ").append(move.description).append(' ').append(percent).append('%');
+			}
+		}
+		String text = String.format(java.util.Locale.ROOT, "Mining brain: %d stretches of tunnel. Lately %.1f ore value a minute. Still trying new ways %d%% of the time.%nWays used: %s",
+			brain.stretches, brain.avgValue, Math.round(brain.exploreChance() * 100), moves);
+		source.sendSuccess(() -> Component.literal(text).withStyle(ChatFormatting.AQUA), false);
+	}
+
+	private static int resetSkill(final CommandContext<CommandSourceStack> ctx) {
+		CommandSourceStack source = ctx.getSource();
+		ServerPlayer player = source.getPlayer();
+		CombatBrains.reset(source.getLevel(), player == null ? null : player.getUUID());
+		CombatBrains.MINING.reset(source.getLevel(), player == null ? null : player.getUUID());
+		source.sendSuccess(() -> Component.literal("Your clones have forgotten everything they learned about fighting and mining.").withStyle(ChatFormatting.YELLOW), false);
+		return 1;
 	}
 
 	private static int spawn(final CommandContext<CommandSourceStack> ctx, final @Nullable String name, final int count) throws CommandSyntaxException {

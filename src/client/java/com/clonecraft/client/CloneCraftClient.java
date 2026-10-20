@@ -19,6 +19,7 @@ public class CloneCraftClient implements ClientModInitializer {
 		MenuScreens.register(CloneCraft.CENTRIFUGE_MENU, CentrifugeScreen::new);
 		MenuScreens.register(CloneCraft.LIFE_INDUCER_MENU, LifeInducerScreen::new);
 		ClientNetworking.register();
+		WatchHud.register();
 		ClientTickEvents.END_CLIENT_TICK.register(Outlines::tick);
 	}
 }

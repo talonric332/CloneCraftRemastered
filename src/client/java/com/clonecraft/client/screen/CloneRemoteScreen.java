@@ -12,8 +12,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * The Clone Remote screen: every clone you own, with buttons to manage it, change its mode, or teleport it to you.
- * "Manage" only works for clones in your dimension that your game has loaded; teleport the others first.
+ * The Clone Remote screen: every clone you own, with buttons to watch it, manage it, change its mode, or teleport it to
+ * you, and what Game Progression has it doing. "Manage" only works for clones in your dimension that your game has
+ * loaded; teleport the others first. "Watch" works anywhere.
  */
 public class CloneRemoteScreen extends Screen {
 	private static final int ROW_H = 24;
@@ -39,7 +40,8 @@ public class CloneRemoteScreen extends Screen {
 
 	@Override
 	protected void init() {
-		this.listW = Math.min(this.width - 20, 420);
+		// Wider on big screens, so there's room for each clone's task next to its name.
+		this.listW = Math.min(this.width - 20, 560);
 		this.listX = (this.width - this.listW) / 2;
 		this.perPage = Math.max(1, (this.height - TOP - 34) / ROW_H);
 		int pages = Math.max(1, (this.clones.size() + this.perPage - 1) / this.perPage);
@@ -66,6 +68,11 @@ public class CloneRemoteScreen extends Screen {
 				.bounds(right - 212, y, 60, 20).build();
 			manage.active = clone.sameLevel() && this.minecraft.level != null && this.minecraft.level.getEntity(clone.entityId()) instanceof CloneEntity;
 			this.addRenderableWidget(manage);
+			// See through the clone's eyes; Sneak comes back.
+			this.addRenderableWidget(Button.builder(Component.literal("Watch"), b -> {
+				this.send(clone.uuid(), Payloads.RemoteAction.WATCH, 0);
+				this.onClose();
+			}).bounds(right - 266, y, 50, 20).build());
 		}
 
 		int by = this.height - 26;
@@ -105,7 +112,7 @@ public class CloneRemoteScreen extends Screen {
 			g.centeredText(this.font, Component.literal("You don't own any clones in loaded areas.").withStyle(ChatFormatting.GRAY), this.width / 2, TOP + 10, 0xFFFFFFFF);
 			return;
 		}
-		int textW = this.listW - 216;
+		int textW = this.listW - 270;
 		for (int i = 0; i < this.perPage; i++) {
 			int index = this.page * this.perPage + i;
 			if (index >= this.clones.size()) {
@@ -113,7 +120,13 @@ public class CloneRemoteScreen extends Screen {
 			}
 			Payloads.RemoteClone clone = this.clones.get(index);
 			int y = TOP + i * ROW_H;
-			g.text(this.font, this.font.plainSubstrByWidth(clone.name(), textW), this.listX, y + 1, 0xFFFFFFFF);
+			String name = this.font.plainSubstrByWidth(clone.name(), textW);
+			g.text(this.font, name, this.listX, y + 1, 0xFFFFFFFF);
+			if (!clone.task().isEmpty()) {
+				// What Game Progression has it doing, after the name.
+				int taskX = this.listX + this.font.width(name) + 6;
+				g.text(this.font, this.font.plainSubstrByWidth(clone.task(), Math.max(0, this.listX + textW - taskX)), taskX, y + 1, 0xFFFFCC55);
+			}
 			String where;
 			if (clone.sameLevel() && this.minecraft.player != null) {
 				where = Math.round(Math.sqrt(this.minecraft.player.blockPosition().distSqr(clone.pos()))) + " blocks away";

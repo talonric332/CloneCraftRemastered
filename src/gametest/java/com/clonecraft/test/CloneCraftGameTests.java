@@ -113,7 +113,7 @@ public class CloneCraftGameTests {
 		return total;
 	}
 
-	private static void setField(final Object target, final Class<?> owner, final String name, final Object value) {
+	static void setField(final Object target, final Class<?> owner, final String name, final Object value) {
 		try {
 			Field field = owner.getDeclaredField(name);
 			field.setAccessible(true);
@@ -300,9 +300,9 @@ public class CloneCraftGameTests {
 	@GameTest(maxTicks = 200)
 	public void zombieStillHuntsClones(final GameTestHelper h) {
 		floor(h);
-		h.setTime(18000);
+		// A husk doesn't burn in daylight, so there's no need to make it night (which would affect the other tests).
 		CloneEntity clone = stillClone(h, 1, 1);
-		Zombie zombie = h.spawn(EntityTypes.ZOMBIE, 6, 1, 6);
+		net.minecraft.world.entity.monster.zombie.Zombie zombie = h.spawn(EntityTypes.HUSK, 6, 1, 6);
 		h.succeedWhen(() -> h.assertTrue(zombie.getTarget() == clone, "The zombie should go after the clone"));
 	}
 

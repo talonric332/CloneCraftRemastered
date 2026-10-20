@@ -21,12 +21,35 @@ public class WanderGoal extends Goal {
 		if (!this.clone.hasOption(CloneOption.WANDER) || this.clone.hasOption(CloneOption.GUARD) || this.clone.getRandom().nextInt(120) != 0) {
 			return false;
 		}
-		Vec3 pos = DefaultRandomPos.getPos(this.clone, 10, 7);
+		Vec3 pos = this.pickSpot();
 		if (pos == null) {
 			return false;
 		}
 		this.clone.getNavigation().moveTo(pos.x, pos.y, pos.z, 1.0);
 		return true;
+	}
+
+	/** A random spot nearby. Out under the open sky, it stays under the open sky rather than strolling into a cave. */
+	private @org.jspecify.annotations.Nullable Vec3 pickSpot() {
+		if (!(this.clone.level() instanceof net.minecraft.server.level.ServerLevel level) || level.dimensionType().hasCeiling()) {
+			return DefaultRandomPos.getPos(this.clone, 10, 7);
+		}
+		net.minecraft.core.BlockPos feet = this.clone.blockPosition();
+		boolean outside = ProgressionGoal.surfaceAt(level, feet.getX(), feet.getZ()) <= feet.getY() + 1;
+		Vec3 any = null;
+		for (int tries = 0; tries < 8; tries++) {
+			Vec3 pos = DefaultRandomPos.getPos(this.clone, 10, 7);
+			if (pos == null) {
+				continue;
+			}
+			net.minecraft.core.BlockPos spot = net.minecraft.core.BlockPos.containing(pos);
+			if (!outside || !level.isLoaded(spot) || ProgressionGoal.surfaceAt(level, spot.getX(), spot.getZ()) <= spot.getY() + 1) {
+				return pos;
+			}
+			any = any == null ? pos : any;
+		}
+		// Only cave spots nearby: stay put this time rather than head underground.
+		return outside ? null : any;
 	}
 
 	@Override

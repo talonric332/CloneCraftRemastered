@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.BiConsumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -41,6 +42,10 @@ public class MineGoal extends Goal {
 	private final List<Unbreakable> unbreakables = new ArrayList<>();
 
 	private @Nullable BlockPos requested;
+	/** Called if the requested block can't be broken (no suitable tool, or the clone can't reach it). */
+	private BiConsumer<BlockPos, BlockState> onRequestFailed = (pos, state) -> {};
+	/** Creative building breaks blocks instantly. */
+	private boolean requestCreative;
 	private @Nullable BlockPos target;
 	private @Nullable BlockState targetState;
 	private float progress;
@@ -73,7 +78,18 @@ public class MineGoal extends Goal {
 
 	/** Used by the build AI to clear a block. */
 	public void request(final BlockPos pos) {
+		this.request(pos, this.clone.buildGoal.isCreative(), this.clone.buildGoal::cantBreak);
+	}
+
+	/** Asks the clone to break one block. onFailed hears about it if the block can't be broken. */
+	public void request(final BlockPos pos, final boolean creative, final BiConsumer<BlockPos, BlockState> onFailed) {
 		this.requested = pos.immutable();
+		this.requestCreative = creative;
+		this.onRequestFailed = onFailed;
+	}
+
+	public boolean hasRequest() {
+		return this.requested != null;
 	}
 
 	public boolean isRequested(final BlockPos pos) {
@@ -100,9 +116,10 @@ public class MineGoal extends Goal {
 				this.requested = null;
 				return false;
 			}
-			if (!this.clone.buildGoal.isCreative() && !this.clone.selectBestToolFor(state, true)) {
-				this.clone.buildGoal.cantBreak(this.requested, state);
+			if (!this.requestCreative && !this.clone.selectBestToolFor(state, true)) {
+				BlockPos failed = this.requested;
 				this.requested = null;
+				this.onRequestFailed.accept(failed, state);
 				return false;
 			}
 			this.target = this.requested;
@@ -265,7 +282,7 @@ public class MineGoal extends Goal {
 		}
 
 		ItemStack tool = this.clone.getMainHandItem();
-		boolean creative = this.requested != null && this.clone.buildGoal.isCreative();
+		boolean creative = this.requested != null && this.requestCreative;
 		float hardness = now.getDestroySpeed(level, this.target);
 		if (hardness < 0) {
 			this.giveUp();
@@ -305,12 +322,14 @@ public class MineGoal extends Goal {
 		state.getBlock().destroy(level, pos, state);
 		if (canHarvest) {
 			Block.dropResources(state, level, pos, blockEntity, this.clone, tool);
+			// Keep the drops for this clone, so other clones nearby don't grab them first.
+			com.clonecraft.clone.DropClaims.claimNew(level, new net.minecraft.world.phys.AABB(pos).inflate(1.0), this.clone);
 		}
 		if (tool.isDamageableItem() && state.getDestroySpeed(level, pos) != 0.0F) {
 			tool.hurtAndBreak(1, this.clone, EquipmentSlot.MAINHAND);
 		}
 		this.clone.addExhaustion(0.005F);
-		if (this.clone.hasOption(CloneOption.FARM) && isMatureCrop(state)) {
+		if ((this.clone.hasOption(CloneOption.FARM) || this.clone.hasOption(CloneOption.GAME_PROGRESSION)) && isMatureCrop(state)) {
 			this.replant(level, pos, state);
 		}
 	}
@@ -336,7 +355,10 @@ public class MineGoal extends Goal {
 	private void giveUp() {
 		if (this.target != null && this.targetState != null) {
 			if (this.requested != null) {
-				this.clone.buildGoal.cantBreak(this.target, this.targetState);
+				BlockPos failed = this.target;
+				BlockState failedState = this.targetState;
+				this.requested = null;
+				this.onRequestFailed.accept(failed, failedState);
 			} else {
 				this.unbreakables.add(new Unbreakable(this.target, this.targetState));
 			}
