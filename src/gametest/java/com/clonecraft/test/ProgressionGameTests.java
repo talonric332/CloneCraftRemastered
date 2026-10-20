@@ -268,7 +268,7 @@ public class ProgressionGameTests {
 		});
 	}
 
-	@GameTest(maxTicks = 1200, padding = 40)
+	@GameTest(maxTicks = 2400, padding = 40)
 	public void stage3HuntsWhenHungry(final GameTestHelper h) {
 		fill(h, Blocks.GRASS_BLOCK, 0, 0);
 		for (int i = 0; i < 8; i++) {

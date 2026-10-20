@@ -70,7 +70,8 @@ public class HomeGameTests {
 		StringBuilder s = new StringBuilder();
 		if (home != null) {
 			s.append(home.rooms.size()).append(" room(s), ").append(home.things.size()).append(" things, built=").append(home.built)
-				.append(", blasts=").append(home.blasts).append(", still to do: ");
+				.append(", blasts=").append(home.blasts).append(", beds for ")
+				.append(home.things.stream().filter(t -> t.part() == HomeBase.Part.BED).map(t -> t.by().substring(0, 8)).toList()).append(", still to do: ");
 			int shown = 0;
 			for (HomeBase.Spot spot : home.plan()) {
 				if (!HomeBase.done(h.getLevel(), home, spot) && shown++ < 6) {
@@ -82,7 +83,9 @@ public class HomeGameTests {
 		for (CloneEntity c : clones) {
 			s.append("; ").append(c.getCloneName()).append(" \"").append(c.progressionGoal.describe()).append("\" at ").append(h.relativePos(c.blockPosition()))
 				.append(" planks=").append(c.getInventory().main.stream().filter(i -> i.is(net.minecraft.tags.ItemTags.PLANKS)).mapToInt(ItemStack::getCount).sum())
-				.append(" stone=").append(c.getInventory().main.stream().filter(i -> i.is(Items.COBBLESTONE)).mapToInt(ItemStack::getCount).sum());
+				.append(" stone=").append(c.getInventory().main.stream().filter(i -> i.is(Items.COBBLESTONE)).mapToInt(ItemStack::getCount).sum())
+				.append(" beds=").append(c.getInventory().main.stream().filter(i -> i.is(net.minecraft.tags.ItemTags.BEDS)).mapToInt(ItemStack::getCount).sum())
+				.append(" id=").append(c.getUUID().toString(), 0, 8);
 		}
 		return s.toString();
 	}

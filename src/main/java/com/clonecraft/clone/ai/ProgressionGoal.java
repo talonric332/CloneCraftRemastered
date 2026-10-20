@@ -716,6 +716,10 @@ public class ProgressionGoal extends Goal {
 		if (this.homeJob(level) != null) {
 			return Objective.HOME;
 		}
+		// Its bed in the house is missing and it hasn't got one: take one from a chest before trying to make one.
+		if (this.myHomeBedMissing && !this.hasBed() && this.planFetch(level, s -> s.is(ItemTags.BEDS), 1)) {
+			return Objective.FETCH;
+		}
 		// The house needs blocks and it hasn't got any: take some from a chest (the helpers put theirs in the house's).
 		if (this.homeWantsBlocks && this.home(level) != null && this.spareBuildingBlocks() < 8 && !this.belowGround(level)
 			&& this.planFetch(level, ProgressionGoal::isBuildingBlock, 64)) {
@@ -2858,8 +2862,12 @@ public class ProgressionGoal extends Goal {
 		}
 		// Can't get to it: leave it for a couple of minutes (or for someone else).
 		if (this.clone.tickCount - this.homeTargetSince > 400) {
-			this.homeSkipUntil.put(pos, this.clone.tickCount + 2400);
 			this.homeTarget = null;
+			// A bed that won't go where it was meant to (something in the way of its head, say): put it somewhere else.
+			if (spot.part() == HomeBase.Part.BED && this.moveBed(level, home, pos)) {
+				return;
+			}
+			this.homeSkipUntil.put(pos, this.clone.tickCount + 2400);
 			return;
 		}
 		Vec3 centre = Vec3.atCenterOf(pos);
@@ -2990,6 +2998,28 @@ public class ProgressionGoal extends Goal {
 				"Looks great!");
 		}
 		HomeBase.changed(level);
+	}
+
+	/** Moves a bed that can't go where it was planned to another spot in the house. Returns false if there's nowhere else. */
+	private boolean moveBed(final ServerLevel level, final HomeBase.Home home, final BlockPos foot) {
+		HomeBase.Thing bed = null;
+		for (HomeBase.Thing t : home.things) {
+			if (t.part() == HomeBase.Part.BED && home.at(t.x(), t.y(), t.z()).equals(foot)) {
+				bed = t;
+			}
+		}
+		if (bed == null) {
+			return false;
+		}
+		home.things.remove(bed);
+		home.redesigned();
+		if (!home.addBed(bed.by(), this.clone.getRandom())) {
+			home.things.add(bed);
+			home.redesigned();
+			return false;
+		}
+		HomeBase.changed(level);
+		return true;
 	}
 
 	/** Its bed in the house if that's free, otherwise any free bed there (where its head goes). */
