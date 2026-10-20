@@ -175,8 +175,15 @@ public final class ServerNetworking {
 			player.sendSystemMessage(Component.literal("A schematic called '" + name + "' already exists.").withStyle(ChatFormatting.RED));
 			return;
 		}
+		// Only whoever saved it (or an admin) can replace someone's schematic.
+		java.util.UUID author = SchematicStore.exists(server, name) ? SchematicStore.author(server, name) : null;
+		if (author != null && !author.equals(player.getUUID())
+			&& !net.minecraft.commands.Commands.hasPermission(net.minecraft.commands.Commands.LEVEL_GAMEMASTERS).test(player.createCommandSourceStack())) {
+			player.sendSystemMessage(Component.literal("'" + name + "' is someone else's schematic. Pick another name.").withStyle(ChatFormatting.RED));
+			return;
+		}
 		Schematic schematic = Schematic.capture(player.level(), name, a, b);
-		if (SchematicStore.save(server, schematic)) {
+		if (SchematicStore.save(server, schematic, player.getUUID())) {
 			player.sendSystemMessage(Component.literal("Schematic '" + name + "' saved!").withStyle(ChatFormatting.GREEN));
 		} else {
 			player.sendSystemMessage(Component.literal("Couldn't save the schematic.").withStyle(ChatFormatting.RED));

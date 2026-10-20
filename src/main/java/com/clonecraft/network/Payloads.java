@@ -58,7 +58,7 @@ public final class Payloads {
 	public record SetList(int entityId, int list, List<Identifier> ids) implements CustomPacketPayload {
 		public static final Type<SetList> TYPE = new Type<>(CloneCraft.id("set_list"));
 		public static final StreamCodec<ByteBuf, SetList> CODEC = StreamCodec.composite(
-			ByteBufCodecs.VAR_INT, SetList::entityId, ByteBufCodecs.VAR_INT, SetList::list, Identifier.STREAM_CODEC.apply(ByteBufCodecs.list()), SetList::ids, SetList::new);
+			ByteBufCodecs.VAR_INT, SetList::entityId, ByteBufCodecs.VAR_INT, SetList::list, Identifier.STREAM_CODEC.apply(ByteBufCodecs.list(ListEdit.MAX_ENTRIES)), SetList::ids, SetList::new);
 
 		@Override
 		public Type<? extends CustomPacketPayload> type() {

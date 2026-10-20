@@ -60,6 +60,9 @@ public final class ProgressionCrafting {
 	public static final Recipe IRON_BOOTS = iron(Items.IRON_BOOTS, 4, null);
 	public static final Recipe DIAMOND_PICKAXE = new Recipe(Items.DIAMOND_PICKAXE, 1, true, List.of(Ingredient.of(Items.DIAMOND, 3), STICKS_2));
 	public static final Recipe CHEST = new Recipe(Items.CHEST, 1, true, List.of(Ingredient.of(ItemTags.PLANKS, 8)));
+	/** For the house: a door (3 from 6 planks), and torches (4 from coal or charcoal and a stick). */
+	public static final Recipe OAK_DOOR = new Recipe(Items.OAK_DOOR, 3, true, List.of(Ingredient.of(ItemTags.PLANKS, 6)));
+	public static final Recipe TORCH = new Recipe(Items.TORCH, 4, false, List.of(Ingredient.of(ItemTags.COALS, 1), STICKS_1));
 	public static final Recipe BLAZE_POWDER =new Recipe(Items.BLAZE_POWDER, 2, false, List.of(Ingredient.of(Items.BLAZE_ROD, 1)));
 	public static final Recipe EYE_OF_ENDER = new Recipe(Items.ENDER_EYE, 1, false, List.of(Ingredient.of(Items.ENDER_PEARL, 1), Ingredient.of(Items.BLAZE_POWDER, 1)));
 

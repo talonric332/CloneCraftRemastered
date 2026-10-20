@@ -72,7 +72,7 @@ Turn on **Farm** and it harvests fully grown crops and replants them with seeds 
 Turn on **Game Progression** in a clone's Options (or for many clones in Bulk Edit → Options) and an idle clone works its
 way through the game by itself:
 1. **Wood:** chops trees, makes a crafting table, a wooden pickaxe, and a bed if there are sheep about.
-2. **Mining:** digs for stone, coal and iron (staircases down and branch tunnels), makes a furnace, smelts the iron and makes
+2. **Mining:** digs for stone, coal and iron like a player (a staircase down, then tunnels and strip mines, mining the ore it uncovers), makes a furnace, smelts the iron and makes
    full iron armour, a sword, a pickaxe, an axe and a shovel. Armour is put on as soon as it's made.
 3. **Food:** whenever it's hungry with nothing to eat, it harvests ripe crops or hunts animals, and cooks the meat.
 4. **Dragon prep:** mines diamonds for a diamond pickaxe, mines obsidian it finds nearby, hunts endermen for pearls and
@@ -97,6 +97,38 @@ the same trader (sticks to a fletcher, coal to a toolsmith, crops to a farmer, r
 it still needs. Trades work just like yours: same prices, the trader's stock runs out, and villagers gain experience and level up.
 It'll still chop a tree or dig for stone when that's easy; trading is for when it can't easily get something itself.
 
+**Home.** A player's clones live together in one house that they design between them. When a clone on the surface has
+plenty of spare building blocks and its owner's clones haven't got a house yet, it picks a good flat spot nearby and designs
+the first room its own way: how big (5 to 9 across), how high, which way it faces, where the door goes, and its style (walls of
+wood, stone, or stone below and wood above; a flat or stepped peaked roof in wood or stone; a wood or stone floor; corner posts
+of logs or a contrasting material or none). Inside go a crafting table, a Clone Storage chest, a furnace, a torch and its own
+bed. Every other clone that moves in adds its own bed wherever it likes, and if
+there's no room left it adds a room onto the side or back of the house (knocking through the wall between). Some add a window
+or a torch of their own too. They build in the house's style when they have the materials, and otherwise with whatever they've
+got (glass for windows if they have it), lay a proper floor inside (planks, or stone: the grass under the house is dug up), make the doors, chests, beds (from
+wool), furnaces and torches it needs, and take blocks from the chest if they run out. If there are none there either, a clone
+goes and mines a good load of stone for it, then comes back up and carries on. Clones down a mine come up to work on the house
+when it needs building and they're carrying plenty of stone (or, with no house yet, enough to start one). Nobody's mine ever goes
+through a house or the ground under it: a clone setting off to dig from the house walks away from it first. Any hole in the house
+gets fixed, however it got there. Only owned clones have a home.
+
+In the evening, each clone up on the surface decides for itself whether to go home: always if it has things to put away
+(it puts them in the chest), otherwise it might stay out. At home it sleeps in its bed (or any free one), or waits inside, and
+gets up in the morning, or if something hits it. Clones mining underground carry on with what they're doing.
+
+Clones on Game Progression fight hostile monsters that come close or come near the house (creepers included), even if they
+aren't on their "Entities To Attack" list. If a creeper still blows a hole in the house, the clones rebuild it stronger: planks
+are replaced with stone, a spot that's blown up again gets an extra outer layer of wall, and after that obsidian if they have
+any. They put torches up outside on the side it came from (creepers spawn in the dark), and it counts against the fighting moves of the clones that were near, so their
+fighting brain learns to deal with creepers before they get to the house. Anything you change about the house yourself (a
+wall you break, a block you swap) is left as you made it. Any creeper crater near the house (whether or not the house was
+hit) is filled in, so nobody falls in and gets stuck.
+
+**Talking.** Clones talk to each other in chat, so you can follow along: planning the house ("I'm adding a room at the back
+for my bed." "Good idea, I'll help knock through."), asking each other for things ("Has anyone got cobblestone?" "I've got
+some, I'll bring them over."), calling for help when they're hurt (teammates nearby come and fight), sharing finds ("I found
+diamonds!") and saying good night and good morning. Each clone only says each kind of thing every so often.
+
 **Growing trees.** With no trees around, a clone plants saplings (using bone meal if it has some to make them grow) and
 chops them when they've grown, keeping the saplings that fall. Dark and pale oak saplings aren't planted, since they need four.
 
@@ -112,13 +144,52 @@ Good to know:
 - What a clone mines or kills is kept for that clone for 30 seconds, so other clones don't grab it. You can still pick it up.
 - It doesn't run while the clone is following you, guarding or building, and fighting always comes first.
 - Staying alive: every clone makes a sword before anything else (wood if there's no stone yet, upgraded later). A badly hurt
-  clone (under about a third of its health) runs away from monsters instead of fighting to the death. At night clones don't go
-  exploring in the open, and a clone with a bed puts it down and sleeps until morning (getting up if something hits it).
+  clone (under about a third of its health) runs away from monsters instead of fighting to the death, and fights back if it's
+  cornered.
+- Digging down, a clone always digs a staircase it can walk back up (never a shaft straight down), and never digs away a
+  step it has stood on. The staircase it digs to go mining is shared: other clones (and it, next time) walk down it instead
+  of digging their own, then tunnel off in different directions from the bottom; if one needs to go deeper it extends the
+  staircase for everyone. Clones also use one to climb back up. No clone ever digs away a step of a shared staircase, and
+  clones walk through each other rather than pushing, so they can pass on the stairs.
+- Caves: a clone that ends up underground (after mining, or after falling into a cave, pit or ravine) and has work to do up top
+  (trees, animals, crops, villagers) gets back out: it walks out if there's a way, and otherwise digs a staircase up to the
+  surface, turning away from lava and water. It only digs through natural ground (stone, dirt, sand...), never through
+  anything built, and a clone inside a building or under a tree never thinks it's in a cave. When it's looking around on the surface it sticks to spots under open sky
+  instead of wandering into cave entrances (wandering clones do the same).
 - It only goes after blocks and mobs in loaded chunks, never mines into or next to lava or water, and throws away junk
   (dirt, gravel...) when its inventory fills up.
 - It needs **Fight** on to hunt. Blazes are only hunted if the clone is already in the Nether (teleport it there with the
   Clone Remote): it won't build portals, travel by itself, trade with piglins or fight the dragon.
 - With **Share Items** on, clones on the same team still hand each other spare gear, food, arrows and torches.
+
+## Clones learn to fight
+Every clone has a small **neural network** that picks how to fight, several times a second: press in and hit, jump for
+critical hits, hit and back off before the enemy can swing back, circle round it, shoot from range with a bow, or keep clear
+(of a creeper about to blow, say). It sees its own and the enemy's health, how far away it is, whether its weapon has
+recharged, what kind of enemy it is, how many monsters are about, and its own gear.
+
+It learns by **reinforcement learning**: damage it takes and dying count against a move, kills (the sooner the better) and
+damage dealt in its favour, and over many fights it does more of what works against each kind of enemy. A new brain tries
+out moves a lot, and less as it gets more experienced. Against zombies (husks) in testing, a new brain mostly stopped walking
+straight in within about 20 fights and switched to circling and hitting and backing off: about 4 damage taken per fight,
+against about 8 for the old way of fighting.
+
+Clones also reach as far as a player (3 blocks, further than a zombie), and a hit while sprinting knocks the enemy back
+further, as for players.
+
+**Mining** is learned the same way. Clones mine like players: they only go after ore they can actually see (a face open to
+the air, in a tunnel wall, a cave or a ravine, within 10 blocks and with nothing in the way), never ore buried in the rock. To
+find more, a clone mining for iron or diamonds digs in stretches, and a second neural network picks how each one goes: tunnel
+straight on, strip mine (a main tunnel with side tunnels off both sides every 3 blocks, which shows the most rock), turn off to
+the side, go 8 blocks deeper, go 8 higher, or head for a cave nearby (walking in if it can). It sees its depth compared with
+the usual best depth, what it's after, its pickaxe, whether there's a cave close by or it's in one, whether there's lava about,
+and how its last few stretches went, and it learns from how much ore each stretch actually turned up per minute (diamonds count
+most when it's after diamonds). While it's new it tries every way a few times, so each gets a fair chance before it settles on
+what works.
+
+All the clones you own share one brain for each, so they learn from each other's fights and mining, and it's saved with the world, so it isn't lost
+when a clone dies. `/clonecraft skill` shows how your clones are doing (fights, wins, damage dealt and taken lately, which
+moves they use), and `/clonecraft skill reset` makes them forget everything.
 
 ## Building
 Use the **Schematic Selector** staff: right-click a block (corner 1), sneak + right-click a block (corner 2), then right-click
@@ -132,7 +203,7 @@ Start a chat message with a backslash: `\hello`, `\follow me`, `\stop following`
 
 ## Extra commands (not in the original)
 `/clonecraft spawn [player] [count]`, `/clonecraft battle <red> <blue> [count]`, `/clonecraft team <team>`,
-`/clonecraft mode <follow|stay|wander>`, `/clonecraft killall`.
+`/clonecraft mode <follow|stay|wander>`, `/clonecraft killall`, `/clonecraft skill [reset]` (any player).
 
 ## Building the mod
 `gradlew build` (Java 25). Output: `build/libs/`.

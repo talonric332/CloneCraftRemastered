@@ -253,7 +253,8 @@ public class CloneInventory implements Container {
 
 	public void load(final ValueInput input) {
 		input.child("CloneInventory").ifPresent(child -> ContainerHelper.loadAllItems(child, this.main));
-		this.selected = input.getIntOr("SelectedSlot", 0);
+		// (Kept to the hotbar, whatever a damaged save says.)
+		this.selected = Math.max(0, Math.min(8, input.getIntOr("SelectedSlot", 0)));
 		this.clone.setItemSlot(EquipmentSlot.MAINHAND, this.main.get(this.selected));
 	}
 }

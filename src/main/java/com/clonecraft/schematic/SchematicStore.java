@@ -44,6 +44,29 @@ public final class SchematicStore {
 		return Files.exists(folder(server).resolve(cleanName(name) + ".nbt"));
 	}
 
+	/** Who saved a schematic (null if nobody's recorded: one saved before this was kept). */
+	public static java.util.@Nullable UUID author(final MinecraftServer server, final String name) {
+		Path file = folder(server).resolve(cleanName(name) + ".author");
+		try {
+			return Files.exists(file) ? java.util.UUID.fromString(Files.readString(file).trim()) : null;
+		} catch (IOException | IllegalArgumentException e) {
+			return null;
+		}
+	}
+
+	/** Saves a schematic, noting who saved it (so only they, or an admin, can overwrite it). */
+	public static boolean save(final MinecraftServer server, final Schematic schematic, final java.util.UUID author) {
+		if (!save(server, schematic)) {
+			return false;
+		}
+		try {
+			Files.writeString(folder(server).resolve(cleanName(schematic.name) + ".author"), author.toString());
+		} catch (IOException e) {
+			CloneCraft.LOGGER.warn("Couldn't note who saved schematic {}", schematic.name, e);
+		}
+		return true;
+	}
+
 	public static boolean save(final MinecraftServer server, final Schematic schematic) {
 		try {
 			Path dir = folder(server);

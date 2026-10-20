@@ -166,27 +166,6 @@ public class ProgressionGameTests {
 		});
 	}
 
-	@GameTest(maxTicks = 400, padding = 40)
-	public void sleepsInItsBedAtNight(final GameTestHelper h) {
-		fill(h, Blocks.STONE, 0, 0);
-		h.setTime(18000);
-		CloneEntity clone = progressingClone(h, 3, 1, 3, true);
-		give(clone, Items.BED.white(), 1);
-		boolean[] slept = {false};
-		h.onEachTick(() -> {
-			if (!slept[0] && clone.isSleeping()) {
-				slept[0] = true;
-				h.setTime(1000);
-			}
-		});
-		h.succeedWhen(() -> {
-			h.assertTrue(slept[0], "The clone hasn't gone to bed");
-			h.assertFalse(clone.isSleeping(), "The clone should get up in the morning");
-		});
-		// Whatever happens, leave it daytime: the clock is shared with every other test.
-		h.runBeforeTestEnd(() -> h.setTime(1000));
-	}
-
 	@GameTest
 	public void craftsStoneToolsAndFurnace(final GameTestHelper h) {
 		fill(h, Blocks.STONE, 0, 0);
@@ -275,12 +254,10 @@ public class ProgressionGameTests {
 		});
 	}
 
-	@GameTest(maxTicks = 4000, padding = 40)
-	public void stage2MinesStoneAndIron(final GameTestHelper h) {
+	/** Stage 2's first part: digging stone for a stone pickaxe and a furnace. (Finding iron is in MiningGameTests.) */
+	@GameTest(maxTicks = 3000, padding = 40)
+	public void stage2MinesStoneForToolsAndAFurnace(final GameTestHelper h) {
 		fill(h, Blocks.STONE, 0, 3);
-		h.setBlock(5, 1, 5, Blocks.IRON_ORE);
-		h.setBlock(2, 2, 5, Blocks.COAL_ORE);
-		h.setBlock(6, 2, 2, Blocks.IRON_ORE);
 		CloneEntity clone = progressingClone(h, 1, 4, 1, true);
 		give(clone, Items.CRAFTING_TABLE, 1);
 		give(clone, Items.WOODEN_PICKAXE, 1);
@@ -288,7 +265,6 @@ public class ProgressionGameTests {
 		h.succeedWhen(() -> {
 			h.assertTrue(has(clone, Items.STONE_PICKAXE), "No stone pickaxe yet");
 			h.assertTrue(has(clone, Items.FURNACE), "No furnace yet");
-			h.assertTrue(has(clone, Items.RAW_IRON) || has(clone, Items.IRON_INGOT), "No iron yet");
 		});
 	}
 

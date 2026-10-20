@@ -200,6 +200,10 @@ public class CloneCraft implements ModInitializer {
 		FabricDefaultAttributeRegistry.register(CLONE, CloneEntity.createAttributes());
 		ServerNetworking.register();
 		com.clonecraft.network.CloneSpectating.register();
+		com.clonecraft.clone.learning.CombatBrains.register();
+		com.clonecraft.clone.progression.MineStairs.register();
+		com.clonecraft.clone.progression.HomeBase.register();
+		com.clonecraft.clone.progression.CloneTalk.register();
 		// Schematics and selections belong to one world; forget them when it closes.
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			com.clonecraft.schematic.SchematicStore.clearCache();
