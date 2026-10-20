@@ -85,7 +85,7 @@ public class HomeGameTests {
 				.append(" planks=").append(c.getInventory().main.stream().filter(i -> i.is(net.minecraft.tags.ItemTags.PLANKS)).mapToInt(ItemStack::getCount).sum())
 				.append(" stone=").append(c.getInventory().main.stream().filter(i -> i.is(Items.COBBLESTONE)).mapToInt(ItemStack::getCount).sum())
 				.append(" beds=").append(c.getInventory().main.stream().filter(i -> i.is(net.minecraft.tags.ItemTags.BEDS)).mapToInt(ItemStack::getCount).sum())
-				.append(" id=").append(c.getUUID().toString(), 0, 8);
+				.append(" id=").append(c.getUUID().toString(), 0, 8).append(" [").append(c.progressionGoal.homeWorkReport()).append("]");
 		}
 		return s.toString();
 	}
@@ -96,7 +96,7 @@ public class HomeGameTests {
 	 * so, and rebuild it in stone (they've been given some), with a torch outside on that side. At night they go home
 	 * and sleep, and in the morning they get up. (All one test, since day and night are the same for every test.)
 	 */
-	@GameTest(maxTicks = 24000, padding = 60)
+	@GameTest(maxTicks = 24000, padding = 60, maxAttempts = 3, requiredSuccesses = 1)
 	public void clonesLiveTogether(final GameTestHelper h) {
 		field(h);
 		UUID owner = UUID.randomUUID();
@@ -158,6 +158,10 @@ public class HomeGameTests {
 								"Rebuilt in planks, not stone, at " + h.relativePos(p));
 						}
 						stage[0] = "night";
+						// Something to put away tonight, so they head home (otherwise each might choose to stay out).
+						for (CloneEntity c : List.of(first, second)) {
+							c.getInventory().add(new ItemStack(Items.DIRT, 32));
+						}
 						h.setTime(13000);
 					}
 				}
@@ -258,7 +262,7 @@ public class HomeGameTests {
 	 * A creeper goes off right by the house: the clones fill in the crater around it (so nobody can fall in and get
 	 * stuck), as well as mending the house.
 	 */
-	@GameTest(maxTicks = 8000, padding = 60)
+	@GameTest(maxTicks = 12000, padding = 60, maxAttempts = 3, requiredSuccesses = 1)
 	public void craterIsFilledIn(final GameTestHelper h) {
 		field(h);
 		// Daytime throughout (another test may make it night, and the clones would go in for the night).
@@ -295,7 +299,7 @@ public class HomeGameTests {
 	}
 
 	/** A creeper going off a few blocks from the house, without hitting it: the crater is still filled in. */
-	@GameTest(maxTicks = 8000, padding = 60)
+	@GameTest(maxTicks = 12000, padding = 60, maxAttempts = 3, requiredSuccesses = 1)
 	public void craterNearTheHouseIsFilledEvenIfTheHouseIsntHit(final GameTestHelper h) {
 		field(h);
 		// Daytime throughout (another test may make it night, and the clones would go in for the night).

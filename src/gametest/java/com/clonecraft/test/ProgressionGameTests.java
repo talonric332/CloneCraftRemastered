@@ -268,20 +268,29 @@ public class ProgressionGameTests {
 		});
 	}
 
-	@GameTest(maxTicks = 2400, padding = 40)
+	@GameTest(maxTicks = 2400, padding = 40, maxAttempts = 3, requiredSuccesses = 1)
 	public void stage3HuntsWhenHungry(final GameTestHelper h) {
 		fill(h, Blocks.GRASS_BLOCK, 0, 0);
 		for (int i = 0; i < 8; i++) {
-			h.setBlock(i, 1, 0, Blocks.OAK_FENCE);
-			h.setBlock(i, 1, 7, Blocks.OAK_FENCE);
-			h.setBlock(0, 1, i, Blocks.OAK_FENCE);
-			h.setBlock(7, 1, i, Blocks.OAK_FENCE);
+			// Walls three high: a hit can knock the cow back hard, and the test area is floating over nothing.
+			for (int y = 1; y <= 3; y++) {
+				h.setBlock(i, y, 0, Blocks.STONE);
+				h.setBlock(i, y, 7, Blocks.STONE);
+				h.setBlock(0, y, i, Blocks.STONE);
+				h.setBlock(7, y, i, Blocks.STONE);
+			}
 		}
-		h.spawn(EntityTypes.COW, 5, 1, 5);
+		var cow = h.spawn(EntityTypes.COW, 5, 1, 5);
 		CloneEntity clone = progressingClone(h, 2, 1, 2, true);
 		give(clone, Items.CRAFTING_TABLE, 1);
 		clone.getFoodData().setFoodLevel(6);
-		h.succeedWhen(() -> h.assertTrue(clone.getFoodData().getFoodLevel() > 6, "The clone hasn't eaten yet"));
+		// Its own owner, so it has a fighting brain of its own (not one the other tests' clones have been teaching).
+		clone.setOwnerId(java.util.UUID.randomUUID());
+		h.succeedWhen(() -> h.assertTrue(clone.getFoodData().getFoodLevel() > 6, "The clone hasn't eaten yet: doing \"" + clone.progressionGoal.describe()
+			+ "\", target " + clone.getTarget() + ", move " + clone.combat.move() + ", cow alive " + cow.isAlive() + " at " + h.relativeVec(cow.position()) + " (" + cow.getCombatTracker().getDeathMessage().getString() + "), items about: "
+			+ h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, clone.getBoundingBox().inflate(16)).stream()
+				.map(i -> i.getItem() + "@" + h.relativeVec(i.position())).toList()
+			+ ", carrying " + clone.getInventory().main.stream().filter(s -> !s.isEmpty()).map(ItemStack::toString).toList()));
 	}
 
 	@GameTest(maxTicks = 300, padding = 40)

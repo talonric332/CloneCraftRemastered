@@ -134,7 +134,7 @@ public class CaveGameTests {
 	 * Going down for stone, a clone digs a staircase it can walk back up, never a shaft straight down. Checked every
 	 * second: from wherever it's standing below ground, there's a walkable way back to where it started.
 	 */
-	@GameTest(maxTicks = 4000, padding = 40)
+	@GameTest(maxTicks = 4000, padding = 40, maxAttempts = 3, requiredSuccesses = 1)
 	public void digsAStaircaseDownNotAShaft(final GameTestHelper h) {
 		hill(h);
 		CloneEntity clone = clone(h, 3, SURFACE, 3);

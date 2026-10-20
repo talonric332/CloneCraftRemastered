@@ -91,7 +91,7 @@ public final class CombatLearner {
 	private void decide(final ServerLevel level, final LivingEntity target) {
 		CombatBrain brain = this.brain(level);
 		float[] state = this.describe(target);
-		boolean[] allowed = this.allowed();
+		boolean[] allowed = this.allowed(target);
 		if (this.lastState != null) {
 			this.learn(brain, new Moment(this.lastState, this.move.ordinal(), this.rewardSince(target), state, allowed));
 		}
@@ -228,10 +228,19 @@ public final class CombatLearner {
 		return this.clone.getInventory().find(s -> s.is(Items.BOW)) >= 0 && this.clone.getInventory().find(s -> s.is(ItemTags.ARROWS)) >= 0;
 	}
 
-	private boolean[] allowed() {
+	private boolean[] allowed(final LivingEntity target) {
 		boolean[] allowed = new boolean[CombatMove.values().length];
 		java.util.Arrays.fill(allowed, true);
 		allowed[CombatMove.SHOOT.ordinal()] = this.hasBowAndArrows();
+		// Nothing to dodge from an animal that won't fight back (hunting a cow, say): just hit it.
+		boolean harmless = !(target instanceof net.minecraft.world.entity.monster.Enemy) && !(target instanceof CloneEntity)
+			&& !(target instanceof net.minecraft.world.entity.player.Player)
+			&& !(target instanceof net.minecraft.world.entity.Mob mob && mob.getTarget() == this.clone);
+		if (harmless) {
+			allowed[CombatMove.HIT_AND_BACK.ordinal()] = false;
+			allowed[CombatMove.CIRCLE.ordinal()] = false;
+			allowed[CombatMove.KEEP_CLEAR.ordinal()] = false;
+		}
 		return allowed;
 	}
 

@@ -177,7 +177,9 @@ public class ProgressionGoal extends Goal {
 	private final Map<BlockPos, Integer> homeSkipUntil = new HashMap<>();
 	private @Nullable BlockPos homeTarget;
 	private int homeTargetSince;
+	/** Whether it has decided about tonight yet (-1: not yet), and whether it was evening last time it looked. */
 	private long decidedNight = -1L;
+	private boolean wasEvening;
 	private boolean goingHome;
 	private @Nullable BlockPos homeWalkFrom;
 	private int homeWalkStuck;
@@ -669,7 +671,7 @@ public class ProgressionGoal extends Goal {
 		// Already there with holes to fix: fix them first, then go in.
 		if (this.headingHomeTonight(level)) {
 			HomeBase.Home home = this.home(level);
-			if (home != null && home.bounds().inflate(6.0).contains(this.clone.position()) && this.homeJob(level) != null) {
+			if (home != null && home.bounds().inflate(12.0).contains(this.clone.position()) && this.homeJob(level) != null) {
 				return Objective.HOME;
 			}
 			return Objective.GO_HOME;
@@ -2549,10 +2551,15 @@ public class ProgressionGoal extends Goal {
 			this.gatheringForHome = false;
 			return null;
 		}
-		if (spare < 8 && !this.gatheringForHome && !below) {
+		// Repairs after a creeper have to be stone: plenty of planks is no use for those.
+		boolean needStone = home.strength.entrySet().stream().anyMatch(e -> e.getValue() > 0 && !home.skip.contains(e.getKey())
+			&& level.isLoaded(e.getKey()) && level.getBlockState(e.getKey()).getCollisionShape(level, e.getKey()).isEmpty());
+		int spareStone = Math.max(0, this.count(ProgressionGoal::isStoneBlock) - this.cobbleNeeded());
+		if ((spare < 8 || needStone && spareStone < 4) && !this.gatheringForHome && !below) {
 			this.gatheringForHome = true;
-			CloneTalk.say(this.clone, CloneTalk.Topic.NEED, "We're out of blocks for the house. I'll go and mine some stone.");
-		} else if (spare >= 48) {
+			CloneTalk.say(this.clone, CloneTalk.Topic.NEED, needStone ? "We need stone to mend the house. I'll go and mine some."
+				: "We're out of blocks for the house. I'll go and mine some stone.");
+		} else if (needStone ? spareStone >= 24 : spare >= 48) {
 			this.gatheringForHome = false;
 		}
 		if (this.gatheringForHome && this.worthDigging(level, IS_STONE)) {
@@ -2932,6 +2939,17 @@ public class ProgressionGoal extends Goal {
 			return;
 		}
 		this.placeForHome(level, home, spot);
+		// Like a player, a few blocks at a time when they're all in reach (filling a crater, putting a wall up).
+		for (int more = 0; more < 2; more++) {
+			HomeBase.Spot next = this.nextHomeSpot(level, home);
+			if (next == null || !EnumSet.of(HomeBase.Part.FLOOR, HomeBase.Part.WALL, HomeBase.Part.PILLAR, HomeBase.Part.ROOF,
+				HomeBase.Part.REINFORCE, HomeBase.Part.WINDOW).contains(next.part())
+				|| this.clone.getEyePosition().distanceToSqr(Vec3.atCenterOf(next.pos())) > REACH_SQ - 2.0
+				|| this.clone.getBoundingBox().intersects(new AABB(next.pos()))) {
+				break;
+			}
+			this.placeForHome(level, home, next);
+		}
 	}
 
 	private void placeForHome(final ServerLevel level, final HomeBase.Home home, final HomeBase.Spot spot) {
@@ -3000,6 +3018,18 @@ public class ProgressionGoal extends Goal {
 		HomeBase.changed(level);
 	}
 
+	/** What it's working on for the house right now, for test reports. */
+	public String homeWorkReport() {
+		if (this.homeTarget == null) {
+			return "no house spot";
+		}
+		return "house spot " + this.homeTarget + " for " + (this.clone.tickCount - this.homeTargetSince) + " ticks, "
+			+ String.format(java.util.Locale.ROOT, "%.1f", Math.sqrt(this.clone.getEyePosition().distanceToSqr(Vec3.atCenterOf(this.homeTarget))))
+			+ " away, path " + (this.clone.getNavigation().isDone() ? "none" : "going") + ", skipping " + this.homeSkipUntil.size()
+			+ ", running " + ((com.clonecraft.mixin.MobAccessor)this.clone).clonecraft$getGoalSelector().getAvailableGoals().stream()
+				.filter(net.minecraft.world.entity.ai.goal.WrappedGoal::isRunning).map(g -> g.getGoal().getClass().getSimpleName()).toList();
+	}
+
 	/** Moves a bed that can't go where it was planned to another spot in the house. Returns false if there's nowhere else. */
 	private boolean moveBed(final ServerLevel level, final HomeBase.Home home, final BlockPos foot) {
 		HomeBase.Thing bed = null;
@@ -3052,14 +3082,20 @@ public class ProgressionGoal extends Goal {
 	 * always if it has things to put away, otherwise it might stay out. Clones underground carry on.
 	 */
 	private boolean headingHomeTonight(final ServerLevel level) {
+		// It decides once each evening, when it notices it's got dark.
+		boolean evening = isEvening(level);
+		boolean newEvening = evening && !this.wasEvening;
+		this.wasEvening = evening;
+		if (newEvening) {
+			this.decidedNight = -1L;
+		}
 		HomeBase.Home home = this.home(level);
-		if (home == null || !home.built || !isEvening(level) || this.belowGround(level)
+		if (home == null || !home.built || !evening || this.belowGround(level)
 			|| !home.inside().closerThan(this.clone.blockPosition(), 96.0)) {
 			return false;
 		}
-		long night = level.getOverworldClockTime() / 24000L;
-		if (night != this.decidedNight) {
-			this.decidedNight = night;
+		if (this.decidedNight < 0L) {
+			this.decidedNight = 1L;
 			this.goingHome = this.hasThingsToStore() || this.clone.getRandom().nextFloat() < 0.6F;
 			this.homeWalkFrom = null;
 			this.homeWalkStuck = 0;
@@ -3447,6 +3483,17 @@ public class ProgressionGoal extends Goal {
 				}
 			}
 			this.collectTicks = 0;
+			// No way to get to it (down a hole, say): don't spend seconds trying, just leave it.
+			if (this.collecting != null && this.clone.distanceToSqr(this.collecting) > 2.0 * 2.0) {
+				// (A route that ends right by it is fine: pickup reaches a block or so. Only skip it if there's no route
+				// at all, or the route stops well short.)
+				net.minecraft.world.level.pathfinder.Path path = this.clone.getNavigation().createPath(this.collecting, 1);
+				if (path == null || !path.canReach() && (path.getEndNode() == null
+					|| path.getEndNode().asBlockPos().distToCenterSqr(this.collecting.position()) > 2.5 * 2.5)) {
+					this.ignoredItems.add(this.collecting.getUUID());
+					this.collecting = null;
+				}
+			}
 		}
 		if (this.collecting == null) {
 			return false;
