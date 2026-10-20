@@ -6,9 +6,12 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"com.clonecraft.test.CloneCraftGameTests"
+			"com.clonecraft.test.CloneCraftGameTests",
+			"com.clonecraft.test.ProgressionGameTests"
 		],
 		"fabric-client-gametest": [
+			"com.clonecraft.test.WatchingClientTest",
+			"com.clonecraft.test.SuperflatClientTest",
 			"com.clonecraft.test.BulkEditEndToEndClientTest",
 			"com.clonecraft.test.BulkEditScreenshotsClientTest",
 			"com.clonecraft.test.WatchFixesClientTest"

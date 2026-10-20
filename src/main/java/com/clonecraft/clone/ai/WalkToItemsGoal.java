@@ -32,7 +32,8 @@ public class WalkToItemsGoal extends Goal {
 		this.item = null;
 		double best = Double.MAX_VALUE;
 		for (Entity e : this.clone.level().getEntities(this.clone, this.clone.getBoundingBox().inflate(16, 8, 16),
-			e -> (e instanceof ItemEntity ie && !ie.hasPickUpDelay() && this.clone.getInventory().fitCount(ie.getItem()) > 0) || e instanceof ExperienceOrb)) {
+			e -> (e instanceof ItemEntity ie && !ie.hasPickUpDelay() && this.clone.getInventory().fitCount(ie.getItem()) > 0
+				&& com.clonecraft.clone.DropClaims.mayTake(ie, this.clone)) || e instanceof ExperienceOrb)) {
 			if (!this.clone.hasLineOfSight(e)) {
 				continue;
 			}

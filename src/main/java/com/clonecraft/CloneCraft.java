@@ -28,6 +28,7 @@ import java.util.function.Function;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.menu.v1.ExtendedMenuType;
@@ -198,6 +199,7 @@ public class CloneCraft implements ModInitializer {
 
 		FabricDefaultAttributeRegistry.register(CLONE, CloneEntity.createAttributes());
 		ServerNetworking.register();
+		com.clonecraft.network.CloneSpectating.register();
 		// Schematics and selections belong to one world; forget them when it closes.
 		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
 			com.clonecraft.schematic.SchematicStore.clearCache();
@@ -207,6 +209,13 @@ public class CloneCraft implements ModInitializer {
 
 		// Talk to clones with "\" in chat.
 		ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) -> !ChatCommands.handle(sender, message.signedContent()));
+
+		// What a clone kills drops for that clone: other clones leave the loot alone for a while.
+		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+			if (source.getEntity() instanceof CloneEntity killer && entity.level() instanceof net.minecraft.server.level.ServerLevel level) {
+				com.clonecraft.clone.DropClaims.claimNew(level, entity.getBoundingBox().inflate(1.5), killer);
+			}
+		});
 
 		// Hostile mobs attack clones that are willing to fight, just like they attack players.
 		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {

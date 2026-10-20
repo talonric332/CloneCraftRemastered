@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 
 /**
  * The Options screen: the clone's name at the top (type a player's username to wear their skin), then a toggle
- * for each of the 18 options. Hover an option to read what it does.
+ * for each option. Hover an option to read what it does.
  */
 public class CloneOptionsScreen extends CloneSubScreen {
 	private EditBox nameBox;

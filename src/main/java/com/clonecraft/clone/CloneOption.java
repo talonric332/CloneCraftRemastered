@@ -1,6 +1,6 @@
 package com.clonecraft.clone;
 
-/** The 18 clone options from the original Options screen, stored as bits in one number. */
+/** The clone options (the 18 from the original Options screen, plus Game Progression), stored as bits in one number. */
 public enum CloneOption {
 	FIGHT("Fight", true, "Determines whether the clones do any fighting (and if other entities will attack this clone)"),
 	SPRINT("Sprint", false, "Makes the clone run faster, however causes clones to become hungry faster"),
@@ -19,7 +19,9 @@ public enum CloneOption {
 	FARM("Farm", false, "Enables/disables a clone's farming ability: fully grown crops are harvested and replanted"),
 	SHARE("Share Items", false, "Clones on the same team share spare armour, weapons and tools, and even out food, arrows and torches."),
 	COMMAND("Commandable", true, "Enables clones to be commanded via in game text. Just talk to them, but begin with a \\ (backslash)"),
-	SKIP_AIR("Skip Air Blocks", false, "When building, clones will skip over air blocks in the schematic");
+	SKIP_AIR("Skip Air Blocks", false, "When building, clones will skip over air blocks in the schematic"),
+	// New options go at the end: options are saved as bits, so moving one would change saved clones' settings.
+	GAME_PROGRESSION("Game Progression", false, "Enables autonomous gathering, mining, gear crafting, and Ender Dragon progression while AFK.");
 
 	public final String label;
 	public final boolean defaultValue;

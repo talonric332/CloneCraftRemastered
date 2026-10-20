@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "com.clonecraft.mixin.client",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"CameraMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

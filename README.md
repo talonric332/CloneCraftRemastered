@@ -43,7 +43,13 @@ DNA from any creature works, so you can also make zombie, cow, creeper... spawn 
 ## Clone Remote
 Craft it with redstone, an ender pearl and iron (` R / IEI / III `). Right-click it to see every clone you own (in loaded areas of any
 dimension), with buttons to **Manage** a clone from any distance, change its **Mode** (Follow/Stay/Wander), **Teleport** it to you,
-or **Teleport All**. Claiming a clone hides its Claim button.
+or **Teleport All**. Claiming a clone hides its Claim button. Clones on Game Progression show what they're doing next to their name.
+
+**Watch** lets you see through a clone's eyes, wherever it is: you go into spectator mode with your view locked to the clone.
+You can look around freely with the mouse (the clone keeps looking where it wants), its hotbar, health and food are shown at
+the bottom of the screen, and **E** opens its whole inventory and armour. Your other clones keep working while you watch.
+Press **Sneak** to stop, and you're put back exactly where you were, in your old game mode (also if the clone dies, or if you log
+out or the server stops while watching).
 
 **Bulk Edit** changes many clones at once:
 1. Tick the clones to change in the list on the left (all are ticked to start; **All** / **None** to select quickly).
@@ -61,6 +67,58 @@ Bulk Edit never changes a clone's name or its Female option, so each clone keeps
 Turn on **Break Blocks** and tick blocks in **Blocks To Break** (or use the Ores/Trees buttons). The clone finds the nearest one
 it can see within 16 blocks, walks over, picks the right tool and digs it out at player speed.
 Turn on **Farm** and it harvests fully grown crops and replants them with seeds from its inventory.
+
+## Game Progression
+Turn on **Game Progression** in a clone's Options (or for many clones in Bulk Edit → Options) and an idle clone works its
+way through the game by itself:
+1. **Wood:** chops trees, makes a crafting table, a wooden pickaxe, and a bed if there are sheep about.
+2. **Mining:** digs for stone, coal and iron (staircases down and branch tunnels), makes a furnace, smelts the iron and makes
+   full iron armour, a sword, a pickaxe, an axe and a shovel. Armour is put on as soon as it's made.
+3. **Food:** whenever it's hungry with nothing to eat, it harvests ripe crops or hunts animals, and cooks the meat.
+4. **Dragon prep:** mines diamonds for a diamond pickaxe, mines obsidian it finds nearby, hunts endermen for pearls and
+   blazes for rods, and crafts Eyes of Ender.
+
+**Working as a team.** When several of your clones are on Game Progression within 64 blocks of each other, they split the work:
+one keeps going for the dragon, and the others become a **Miner** (mines coal, iron and later diamonds), a **Lumberjack**
+(chops trees) and a **Hunter** (keeps up to 64 food in storage, and leaves at least 3 of each kind of animal so they keep
+breeding). Helpers put what they gather in Clone Storage, and the clone going for the dragon takes what it needs from there.
+You can see each clone's job on the Clone Remote.
+
+**Chests.** Clones make chests named **Clone Storage** and put their spare items in them (only there, never in your
+chests). When a clone needs wood, saplings, stone, coal, iron, diamonds or food, it checks every chest and barrel within
+32 blocks first: Clone Storage, a bonus chest, village chests, or your own storage. It also takes any better pickaxe, sword,
+axe or armour it finds. Loot chests fill the first time a clone looks inside, like when you open them. So you can give clones
+anything by putting it in a chest near them.
+
+**Trading.** In any world, when a clone is looking for something and a villager or wandering trader within 24 blocks sells
+it, the clone trades for it: a toolsmith's pickaxe, an armorer's armour, a farmer's bread, a cleric's Ender Pearls, a wandering
+trader's logs or saplings... It pays with emeralds it has (or finds in a chest), and to get more it sells its spare items to
+the same trader (sticks to a fletcher, coal to a toolsmith, crops to a farmer, rotten flesh to a cleric). It never sells anything
+it still needs. Trades work just like yours: same prices, the trader's stock runs out, and villagers gain experience and level up.
+It'll still chop a tree or dig for stone when that's easy; trading is for when it can't easily get something itself.
+
+**Growing trees.** With no trees around, a clone plants saplings (using bone meal if it has some to make them grow) and
+chops them when they've grown, keeping the saplings that fall. Dark and pale oak saplings aren't planted, since they need four.
+
+**Superflat worlds.** There are no trees, stone or ores in a superflat world, so clones don't wander off or dig down to
+bedrock looking for them. Instead they use what's in nearby chests (start the world with a bonus chest!), grow trees from
+saplings, and when they're stuck they say in chat what they need, like "I need cobblestone to keep going. Put some in a chest
+near me!", and wait. The Clone Remote shows what each one is waiting for.
+
+Good to know:
+- Like a player, a clone needs a placed crafting table for anything bigger than a 2x2 grid (tools, armour, the furnace, a bed,
+  a chest). If there isn't one nearby it puts down the one it carries, crafts, and picks it back up. It smelts in a furnace it
+  carries; smelting takes as long as a real furnace and burns coal (or spare wood).
+- What a clone mines or kills is kept for that clone for 30 seconds, so other clones don't grab it. You can still pick it up.
+- It doesn't run while the clone is following you, guarding or building, and fighting always comes first.
+- Staying alive: every clone makes a sword before anything else (wood if there's no stone yet, upgraded later). A badly hurt
+  clone (under about a third of its health) runs away from monsters instead of fighting to the death. At night clones don't go
+  exploring in the open, and a clone with a bed puts it down and sleeps until morning (getting up if something hits it).
+- It only goes after blocks and mobs in loaded chunks, never mines into or next to lava or water, and throws away junk
+  (dirt, gravel...) when its inventory fills up.
+- It needs **Fight** on to hunt. Blazes are only hunted if the clone is already in the Nether (teleport it there with the
+  Clone Remote): it won't build portals, travel by itself, trade with piglins or fight the dragon.
+- With **Share Items** on, clones on the same team still hand each other spare gear, food, arrows and torches.
 
 ## Building
 Use the **Schematic Selector** staff: right-click a block (corner 1), sneak + right-click a block (corner 2), then right-click

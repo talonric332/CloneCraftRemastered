@@ -12,6 +12,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 
 /** Every message the clone screens send to the server, and the server sends back. */
 public final class Payloads {
@@ -96,6 +97,7 @@ public final class Payloads {
 		public static final int TELEPORT_ALL = 2;
 		public static final int SET_MODE = 3;
 		public static final int MANAGE = 4;
+		public static final int WATCH = 5;
 
 		public static final Type<RemoteAction> TYPE = new Type<>(CloneCraft.id("remote_action"));
 		public static final StreamCodec<ByteBuf, RemoteAction> CODEC = StreamCodec.composite(
@@ -147,9 +149,12 @@ public final class Payloads {
 
 	// ---------------------------------------------------------------- server -> client
 
-	/** One owned clone, as shown on the Clone Remote screen. Mode: 0 none, 1 follow, 2 stay, 3 wander. */
+	/**
+	 * One owned clone, as shown on the Clone Remote screen. Mode: 0 none, 1 follow, 2 stay, 3 wander. task is what Game
+	 * Progression has it doing (e.g. "Miner: Mining for iron and coal"), or empty.
+	 */
 	public record RemoteClone(UUID uuid, int entityId, String name, float health, float maxHealth, String dimension, BlockPos pos,
-		boolean sameLevel, int mode) {
+		boolean sameLevel, int mode, String task) {
 		public static final int MODE_NONE = 0;
 		public static final int MODE_FOLLOW = 1;
 		public static final int MODE_STAY = 2;
@@ -158,7 +163,8 @@ public final class Payloads {
 		public static final StreamCodec<ByteBuf, RemoteClone> CODEC = StreamCodec.composite(
 			UUIDUtil.STREAM_CODEC, RemoteClone::uuid, ByteBufCodecs.VAR_INT, RemoteClone::entityId, ByteBufCodecs.stringUtf8(64), RemoteClone::name,
 			ByteBufCodecs.FLOAT, RemoteClone::health, ByteBufCodecs.FLOAT, RemoteClone::maxHealth, ByteBufCodecs.stringUtf8(256), RemoteClone::dimension,
-			BlockPos.STREAM_CODEC, RemoteClone::pos, ByteBufCodecs.BOOL, RemoteClone::sameLevel, ByteBufCodecs.VAR_INT, RemoteClone::mode, RemoteClone::new);
+			BlockPos.STREAM_CODEC, RemoteClone::pos, ByteBufCodecs.BOOL, RemoteClone::sameLevel, ByteBufCodecs.VAR_INT, RemoteClone::mode,
+			ByteBufCodecs.stringUtf8(128), RemoteClone::task, RemoteClone::new);
 	}
 
 	/** The player's clones for the Clone Remote screen. "open" opens the screen; otherwise it just refreshes an open one. */
@@ -166,6 +172,22 @@ public final class Payloads {
 		public static final Type<RemoteList> TYPE = new Type<>(CloneCraft.id("remote_list"));
 		public static final StreamCodec<ByteBuf, RemoteList> CODEC = StreamCodec.composite(
 			RemoteClone.CODEC.apply(ByteBufCodecs.list()), RemoteList::clones, ByteBufCodecs.BOOL, RemoteList::open, RemoteList::new);
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * The inventory of the clone a player is watching (the Clone Remote's Watch), so their screen can show its hotbar and
+	 * backpack: 36 inventory slots (the first 9 are the hotbar), then the 4 armour slots (head to feet).
+	 */
+	public record WatchedInventory(int entityId, int selected, List<ItemStack> items) implements CustomPacketPayload {
+		public static final Type<WatchedInventory> TYPE = new Type<>(CloneCraft.id("watched_inventory"));
+		public static final StreamCodec<RegistryFriendlyByteBuf, WatchedInventory> CODEC = StreamCodec.composite(
+			ByteBufCodecs.VAR_INT, WatchedInventory::entityId, ByteBufCodecs.VAR_INT, WatchedInventory::selected,
+			ItemStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(64)), WatchedInventory::items, WatchedInventory::new);
 
 		@Override
 		public Type<? extends CustomPacketPayload> type() {

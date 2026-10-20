@@ -20,7 +20,7 @@ public class BulkEditScreenshotsClientTest implements FabricClientGameTest {
 		String[] names = {"Steve", "Alex", "Notch", "Jeb", "Dinnerbone", "Grumm"};
 		for (int i = 0; i < names.length; i++) {
 			clones.add(new Payloads.RemoteClone(UUID.randomUUID(), i, names[i], 20.0F, 20.0F, "minecraft:overworld", BlockPos.ZERO, true,
-				Payloads.RemoteClone.MODE_FOLLOW));
+				Payloads.RemoteClone.MODE_FOLLOW, ""));
 		}
 		// Block icons need a loaded world, like when a player opens Bulk Edit from the Clone Remote.
 		try (var world = context.worldBuilder().create()) {

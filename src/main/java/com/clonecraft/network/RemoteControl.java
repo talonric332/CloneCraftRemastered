@@ -48,7 +48,8 @@ public final class RemoteControl {
 		List<Payloads.RemoteClone> entries = new ArrayList<>();
 		for (CloneEntity clone : ownedClones(player)) {
 			entries.add(new Payloads.RemoteClone(clone.getUUID(), clone.getId(), clone.getCloneName(), clone.getHealth(), clone.getMaxHealth(),
-				clone.level().dimension().identifier().toString(), clone.blockPosition(), clone.level() == player.level(), modeOf(clone)));
+				clone.level().dimension().identifier().toString(), clone.blockPosition(), clone.level() == player.level(), modeOf(clone),
+				clone.progressionGoal.describe()));
 		}
 		ServerPlayNetworking.send(player, new Payloads.RemoteList(entries, open));
 	}
@@ -95,6 +96,14 @@ public final class RemoteControl {
 					clone.setOption(CloneOption.GUARD, mode == Payloads.RemoteClone.MODE_STAY);
 					clone.setOption(CloneOption.WANDER, mode == Payloads.RemoteClone.MODE_WANDER);
 				}
+			}
+			case Payloads.RemoteAction.WATCH -> {
+				CloneEntity clone = find(player, payload);
+				if (clone != null) {
+					player.closeContainer();
+					CloneSpectating.start(player, clone);
+				}
+				return;
 			}
 			case Payloads.RemoteAction.MANAGE -> {
 				CloneEntity clone = find(player, payload);

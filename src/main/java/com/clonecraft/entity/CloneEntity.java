@@ -14,6 +14,7 @@ import com.clonecraft.clone.ai.FetchItemGoal;
 import com.clonecraft.clone.ai.FollowCloneOwnerGoal;
 import com.clonecraft.clone.ai.LookIdleGoal;
 import com.clonecraft.clone.ai.MineGoal;
+import com.clonecraft.clone.ai.ProgressionGoal;
 import com.clonecraft.clone.ai.ReturnGuardGoal;
 import com.clonecraft.clone.ai.ShareGoal;
 import com.clonecraft.clone.ai.WalkToItemsGoal;
@@ -132,6 +133,7 @@ public class CloneEntity extends PathfinderMob {
 	public FetchItemGoal fetchGoal;
 	public CommandGoal commandGoal;
 	public ShareGoal shareGoal;
+	public ProgressionGoal progressionGoal;
 
 	public CloneEntity(final EntityType<? extends CloneEntity> type, final Level level) {
 		super(type, level);
@@ -182,8 +184,11 @@ public class CloneEntity extends PathfinderMob {
 		this.fetchGoal = new FetchItemGoal(this);
 		this.commandGoal = new CommandGoal(this);
 		this.shareGoal = new ShareGoal(this);
+		this.progressionGoal = new ProgressionGoal(this);
 
 		this.goalSelector.addGoal(0, new FloatGoal(this));
+		// Above fighting: a badly hurt clone on Game Progression runs instead of fighting to the death.
+		this.goalSelector.addGoal(0, new com.clonecraft.clone.ai.FleeGoal(this));
 		this.goalSelector.addGoal(1, new AttackEnemiesGoal(this));
 		this.goalSelector.addGoal(2, new OpenDoorGoal(this, true));
 		this.goalSelector.addGoal(3, new FollowCloneOwnerGoal(this));
@@ -191,6 +196,8 @@ public class CloneEntity extends PathfinderMob {
 		this.goalSelector.addGoal(5, this.fetchGoal);
 		this.goalSelector.addGoal(6, this.mineGoal);
 		this.goalSelector.addGoal(7, this.buildGoal);
+		// Below fighting, following, commands and mining (which it asks to dig for it); it doesn't run while building.
+		this.goalSelector.addGoal(7, this.progressionGoal);
 		this.goalSelector.addGoal(8, new WalkToItemsGoal(this));
 		this.goalSelector.addGoal(9, new ReturnGuardGoal(this));
 		this.goalSelector.addGoal(18, this.shareGoal);
@@ -343,6 +350,10 @@ public class CloneEntity extends PathfinderMob {
 		return this.ownerId != null;
 	}
 
+	public @Nullable UUID getOwnerId() {
+		return this.ownerId;
+	}
+
 	public String getOwnerName() {
 		return this.entityData.get(DATA_OWNER_NAME);
 	}
@@ -400,6 +411,16 @@ public class CloneEntity extends PathfinderMob {
 			this.updateSprint();
 			this.updateScale();
 			this.swim();
+			if (this.hasOption(CloneOption.GAME_PROGRESSION)) {
+				this.progressionGoal.furnace.tick(this, this.foodData.getFoodLevel() <= 14);
+			}
+			// Asleep in a bed: stay put, and get up in the morning (or if Game Progression is turned off).
+			if (this.isSleeping()) {
+				this.getNavigation().stop();
+				if (!ProgressionGoal.isNight(level) || !this.hasOption(CloneOption.GAME_PROGRESSION)) {
+					this.stopSleeping();
+				}
+			}
 			// Only pick a guard spot once standing on solid ground (not mid-fall or swimming).
 			if (this.hasOption(CloneOption.GUARD) && this.guardPos == null && this.onGround() && !this.isInWater()) {
 				this.guardPos = this.blockPosition().below();
@@ -477,6 +498,18 @@ public class CloneEntity extends PathfinderMob {
 			this.foodData.addExhaustion((float)(moved * (sprint ? 0.1 : 0.01)));
 		}
 		this.lastPos = now;
+	}
+
+	/**
+	 * Like a player, a clone on Game Progression will jump down a few blocks (say, off a giant mushroom or out of a
+	 * tree) rather than stay stranded, as long as the fall costs at most about a third of its health.
+	 */
+	@Override
+	public int getMaxFallDistance() {
+		if (this.hasOption(CloneOption.GAME_PROGRESSION) && this.getTarget() == null) {
+			return 3 + Math.max(0, (int)(this.getHealth() / 3.0F));
+		}
+		return super.getMaxFallDistance();
 	}
 
 	@Override
@@ -603,9 +636,13 @@ public class CloneEntity extends PathfinderMob {
 
 	private void pickupNearby(final ServerLevel level) {
 		this.eatThrownMelons(level);
-		if (this.hasOption(CloneOption.PICKUP)) {
+		// Game Progression needs the things it mines and hunts, so it always picks up.
+		if (this.hasOption(CloneOption.PICKUP) || this.hasOption(CloneOption.GAME_PROGRESSION)) {
 			for (ItemEntity itemEntity : level.getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(1.0, 0.5, 1.0))) {
-				if (!itemEntity.isAlive() || itemEntity.hasPickUpDelay()) {
+				// Don't pick straight back up what this clone threw away.
+				// Nor what another clone just mined or killed: that's theirs for a while.
+				if (!itemEntity.isAlive() || itemEntity.hasPickUpDelay() || itemEntity.getOwner() == this
+					|| !com.clonecraft.clone.DropClaims.mayTake(itemEntity, this)) {
 					continue;
 				}
 				ItemStack stack = itemEntity.getItem();
@@ -918,6 +955,10 @@ public class CloneEntity extends PathfinderMob {
 		if (this.scale > DEFAULT_SCALE && source.is(net.minecraft.world.damagesource.DamageTypes.IN_WALL)) {
 			return false;
 		}
+		// Woken up by being hit.
+		if (this.isSleeping()) {
+			this.stopSleeping();
+		}
 		boolean hurt = super.hurtServer(level, source, damage);
 		if (hurt && attacker instanceof LivingEntity living && this.hasOption(CloneOption.RETALIATE) && this.hasOption(CloneOption.FIGHT)) {
 			boolean friendly = living instanceof Player p && (p.getAbilities().instabuild || this.isOwnedBy(p));
@@ -1144,6 +1185,7 @@ public class CloneEntity extends PathfinderMob {
 		output.store("BreakBlocks", Identifier.CODEC.listOf(), new ArrayList<>(this.breakBlocks));
 		output.store("KnownContainers", BlockPos.CODEC.listOf(), new ArrayList<>(this.knownContainers));
 		this.buildGoal.save(output);
+		this.progressionGoal.save(output);
 	}
 
 	@Override
@@ -1178,6 +1220,7 @@ public class CloneEntity extends PathfinderMob {
 		this.knownContainers.clear();
 		this.knownContainers.addAll(input.read("KnownContainers", BlockPos.CODEC.listOf()).orElse(List.of()));
 		this.buildGoal.load(input);
+		this.progressionGoal.load(input);
 		this.refreshName();
 	}
 

@@ -32,6 +32,7 @@ public final class ServerNetworking {
 		PayloadTypeRegistry.clientboundPlay().register(Payloads.Selection.TYPE, Payloads.Selection.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(Payloads.RemoteAction.TYPE, Payloads.RemoteAction.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(Payloads.RemoteList.TYPE, Payloads.RemoteList.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(Payloads.WatchedInventory.TYPE, Payloads.WatchedInventory.CODEC);
 
 		PayloadTypeRegistry.serverboundPlay().register(Payloads.BulkEdit.TYPE, Payloads.BulkEdit.CODEC);
 
